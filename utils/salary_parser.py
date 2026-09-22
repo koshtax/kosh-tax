@@ -3,12 +3,12 @@ import re
 
 def parse_salary_slip(file):
     """
-    Extract data cleanly from salary slip PDF and separate Name & Designation accurately
+    Extract all components including dynamic Ptax, GIS, and Medical from salary slip PDF
     """
     extracted = {
         'name': '', 'pan': '', 'designation': '',
-        'basic': 0.0, 'da': 0.0, 'hra': 0.0, 'medical': 1000.0,
-        'gpf': 0.0, 'gis': 60.0, 'ptax': 200.0, 'gpf_no': '',
+        'basic': 0.0, 'da': 0.0, 'hra': 0.0, 'medical': 0.0,
+        'gpf': 0.0, 'gis': 0.0, 'ptax': 0.0, 'gpf_no': '',
         'arrear_da': 0.0, 'arrear_pay': 0.0, 'confidence': 0
     }
 
@@ -26,9 +26,9 @@ def parse_salary_slip(file):
             extracted['pan'] = pan_match.group(1).upper()
             extracted['confidence'] += 20
 
-        # 2. Extract Designation First (Taaki name me se designaton ka shabd hata sakein)
+        # 2. Extract Designation
         found_des = ""
-        for des in ["ASSISTANT TEACHER", "TEACHER", "CLERK", "LIPIK", "HEADMASTER", "PRINCIPAL", "ACCOUNTANT", "TEACHER"]:
+        for des in ["ASSISTANT TEACHER", "TEACHER", "CLERK", "LIPIK", "HEADMASTER", "PRINCIPAL", "ACCOUNTANT"]:
             if des in text_upper:
                 found_des = des
                 break
@@ -38,14 +38,12 @@ def parse_salary_slip(file):
         name_match = re.search(r'(?:EMPLOYEE\s*NAME|NAME)\s*[:\-]?\s*([A-Z\s\.]+)', text_upper)
         if name_match:
             raw_name = name_match.group(1)
-            # Agar naam ke sath designation chipka ho toh use kaat do
             for keyword in ["DESIGNATION", "PAN", "GPF", "PRAN", "DDO", "BASIC"]:
                 if keyword in raw_name:
                     raw_name = raw_name.split(keyword)[0]
             extracted['name'] = raw_name.strip().upper()
             extracted['confidence'] += 20
 
-        # Fallback agar name blank reh jaye
         if not extracted['name']:
             extracted['name'] = "VALUED EMPLOYEE"
 
@@ -66,9 +64,10 @@ def parse_salary_slip(file):
         extracted['basic'] = get_val(["BASIC", "मूल वेतन"])
         extracted['da'] = get_val(["DA", "महंगाई भत्ता"])
         extracted['hra'] = get_val(["HRA"])
+        extracted['medical'] = get_val(["MEDICAL", "MED ALLOWANCE", "MED"])
         extracted['gpf'] = get_val(["GPF", "NPS"])
-        extracted['gis'] = get_val(["GIS"]) or 60.0
-        extracted['ptax'] = get_val(["PTAX", "PROFESSIONAL TAX"]) or 200.0
+        extracted['gis'] = get_val(["GIS", "GROUP INSURANCE"])
+        extracted['ptax'] = get_val(["PTAX", "PROFESSIONAL TAX", "PROF TAX"])
         extracted['arrear_da'] = get_val(["ARREAR DA"])
         extracted['arrear_pay'] = get_val(["ARREAR PAY", "PAY ARREAR"])
 
