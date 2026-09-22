@@ -1,4 +1,4 @@
-koi import streamlit as st
+import streamlit as st
 import sqlite3
 from datetime import date
 from utils.salary_parser import parse_salary_slip
