@@ -3,7 +3,7 @@ import re
 
 def parse_salary_slip(file):
     """
-    Extract data from salary slip PDF and return uppercase fields
+    Extract data cleanly from salary slip PDF avoiding text overlapping
     """
     extracted = {
         'name': '', 'pan': '', 'designation': '',
@@ -14,34 +14,40 @@ def parse_salary_slip(file):
 
     try:
         reader = PdfReader(file)
-        text = "".join([p.extract_text() or "" for p in reader.pages]).upper()
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
 
-        # Extract PAN
-        pan_match = re.search(r'([A-Z]{5}[0-9]{4}[A-Z]{1})', text)
+        text_upper = text.upper()
+
+        # 1. Extract PAN
+        pan_match = re.search(r'([A-Z]{5}[0-9]{4}[A-Z]{1})', text_upper)
         if pan_match:
             extracted['pan'] = pan_match.group(1).upper()
             extracted['confidence'] += 20
 
-        # Extract Name
-        name_match = re.search(r'EMPLOYEE\s*NAME\s*[:\-]?\s*([A-Z\s\.]+?)(?=\s*PAN|\s*DDO|\n|$)', text)
+        # 2. Extract Name (Strictly stopping before DESIGNATION, PAN, etc.)
+        name_match = re.search(r'(?:EMPLOYEE\s*NAME|NAME)\s*[:\-]?\s*([A-Z\s]+?)(?=\s+DESIGNATION|\s+PAN|\s+GPF|\s+DDO|\n|$)', text_upper)
         if name_match:
-            extracted['name'] = name_match.group(1).strip().upper()
+            clean_name = name_match.group(1).replace("DESIGN", "").strip()
+            extracted['name'] = clean_name.upper()
             extracted['confidence'] += 20
 
-        # Extract Designation
-        for des in ["CLERK", "LIPIK", "ASSISTANT TEACHER", "TEACHER", "HEADMASTER", "PRINCIPAL", "ACCOUNTANT"]:
-            if des in text:
+        # 3. Extract Designation
+        for des in ["ASSISTANT TEACHER", "TEACHER", "CLERK", "LIPIK", "HEADMASTER", "PRINCIPAL", "ACCOUNTANT"]:
+            if des in text_upper:
                 extracted['designation'] = des.upper()
                 break
 
-        # Extract GPF Number
-        gpf_match = re.search(r'(?:GPF|PRAN|PF)\s*NO\.?\s*[:\-]?\s*([A-Z0-9\/\-]+)', text)
+        # 4. Extract GPF Number
+        gpf_match = re.search(r'(?:GPF|PRAN|PF)\s*NO\.?\s*[:\-]?\s*([A-Z0-9\/\-]+)', text_upper)
         if gpf_match:
             extracted['gpf_no'] = gpf_match.group(1).strip().upper()
 
+        # 5. Numeric fields helper
         def get_val(labels):
             for l in labels:
-                m = re.search(rf"{l}\s*[:\-]?\s*[₹Rs\.\s]*([0-9,]+(?:\.[0-9]+)?)", text)
+                m = re.search(rf"{l}\s*[:\-]?\s*[₹Rs\.\s]*([0-9,]+(?:\.[0-9]+)?)", text_upper)
                 if m:
                     try: return float(m.group(1).replace(',', ''))
                     except: pass
@@ -60,3 +66,4 @@ def parse_salary_slip(file):
         print(f"Error parsing PDF: {e}")
 
     return extracted
+
