@@ -1333,7 +1333,7 @@ def render_full_employee_suite(is_admin_mode=False, prefix="emp"):
             scanned = parse_slip_in_memory(slip_up)
             st.session_state[f"{prefix}_scanned"] = scanned
             st.session_state[f"{prefix}_last_uploaded"] = slip_up.name
-               scanned = st.session_state.get(f"{prefix}_scanned", {})
+            scanned = st.session_state.get(f"{prefix}_scanned", {})
 
     # 📊 Live Summary Dashboard
     if scanned and scanned.get('basic', 0) > 0:
