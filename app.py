@@ -216,7 +216,7 @@ def show_payment():
 
     if mode == 'trial' or is_trial_mode(st.session_state.get('payment_status')):
         st.success("🎁 FREE TRIAL MODE ACTIVE")
-        if st.button("PROCEED TO DOWNLOAD (TRIAL)", type="primary", use_container_width=True):
+        if st.button("PROCEED TO DOWNLOAD (TRIAL)", key="trial_download_btn"):
             st.session_state.payment_status = 'trial'
             st.session_state.current_page = 'download'
             st.rerun()
@@ -227,7 +227,7 @@ def show_payment():
         with tab1:
             st.markdown("**AMOUNT: ₹99**\n\nUPI ID: `nitinmallick111-1@okicici`")
             utr = st.text_input("ENTER 12-DIGIT UTR NUMBER", max_chars=12)
-            if st.button("VERIFY & DOWNLOAD", type="primary", use_container_width=True):
+        if st.button("VERIFY & DOWNLOAD", key="verify_paid_btn"):
                 if len(utr) == 12:
                     st.session_state.payment_status = 'paid'
                     st.session_state.utr = utr
@@ -238,19 +238,19 @@ def show_payment():
 
         with tab2:
             st.markdown("**AMOUNT: ₹99**\n\nPAY CASH AT ADMIN OFFICE.")
-            if st.button("I PAID CASH", use_container_width=True):
+            if st.button("I PAID CASH", key="key="..."):
                 st.session_state.payment_status = 'cash'
                 st.session_state.current_page = 'download'
                 st.rerun()
 
         with tab3:
             st.markdown("**FREE TRIAL COPY** (WATERMARKED)")
-            if st.button("DOWNLOAD TRIAL", use_container_width=True):
+            if st.button("DOWNLOAD TRIAL", key="key="..."):
                 st.session_state.payment_status = 'trial'
                 st.session_state.current_page = 'download'
                 st.rerun()
 
-    if st.button("← BACK"):
+    if st.button("← BACK", key="key="..."):
         st.session_state.current_page = 'review'
         st.rerun()
 
