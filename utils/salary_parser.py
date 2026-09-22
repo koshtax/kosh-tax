@@ -3,7 +3,7 @@ import re
 
 def parse_salary_slip(file):
     """
-    Extract data cleanly from salary slip PDF avoiding text overlapping
+    Extract data cleanly from salary slip PDF and separate Name & Designation accurately
     """
     extracted = {
         'name': '', 'pan': '', 'designation': '',
@@ -26,18 +26,28 @@ def parse_salary_slip(file):
             extracted['pan'] = pan_match.group(1).upper()
             extracted['confidence'] += 20
 
-        # 2. Extract Name (Strictly stopping before DESIGNATION, PAN, etc.)
-        name_match = re.search(r'(?:EMPLOYEE\s*NAME|NAME)\s*[:\-]?\s*([A-Z\s]+?)(?=\s+DESIGNATION|\s+PAN|\s+GPF|\s+DDO|\n|$)', text_upper)
+        # 2. Extract Designation First (Taaki name me se designaton ka shabd hata sakein)
+        found_des = ""
+        for des in ["ASSISTANT TEACHER", "TEACHER", "CLERK", "LIPIK", "HEADMASTER", "PRINCIPAL", "ACCOUNTANT", "TEACHER"]:
+            if des in text_upper:
+                found_des = des
+                break
+        extracted['designation'] = found_des.upper()
+
+        # 3. Extract Name cleanly
+        name_match = re.search(r'(?:EMPLOYEE\s*NAME|NAME)\s*[:\-]?\s*([A-Z\s\.]+)', text_upper)
         if name_match:
-            clean_name = name_match.group(1).replace("DESIGN", "").strip()
-            extracted['name'] = clean_name.upper()
+            raw_name = name_match.group(1)
+            # Agar naam ke sath designation chipka ho toh use kaat do
+            for keyword in ["DESIGNATION", "PAN", "GPF", "PRAN", "DDO", "BASIC"]:
+                if keyword in raw_name:
+                    raw_name = raw_name.split(keyword)[0]
+            extracted['name'] = raw_name.strip().upper()
             extracted['confidence'] += 20
 
-        # 3. Extract Designation
-        for des in ["ASSISTANT TEACHER", "TEACHER", "CLERK", "LIPIK", "HEADMASTER", "PRINCIPAL", "ACCOUNTANT"]:
-            if des in text_upper:
-                extracted['designation'] = des.upper()
-                break
+        # Fallback agar name blank reh jaye
+        if not extracted['name']:
+            extracted['name'] = "VALUED EMPLOYEE"
 
         # 4. Extract GPF Number
         gpf_match = re.search(r'(?:GPF|PRAN|PF)\s*NO\.?\s*[:\-]?\s*([A-Z0-9\/\-]+)', text_upper)
@@ -66,4 +76,3 @@ def parse_salary_slip(file):
         print(f"Error parsing PDF: {e}")
 
     return extracted
-
