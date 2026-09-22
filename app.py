@@ -100,106 +100,101 @@ def show_upload():
         st.session_state.current_page = 'home'
         st.rerun()
 
+# Review Page
 def show_review():
-    st.title("📋 STEP 2: REVIEW & COMPLETE DETAILS")
+    st.title("📋 Review Your Data")
+
     data = st.session_state.extracted_data or {}
 
-    with st.form("main_entry_form"):
-        # --- 1. DDO Details (TAN Number First) ---
-        st.subheader("🏢 DDO & EMPLOYER DETAILS")
+    with st.form("review_form"):
+        # --- Employer Details Section ---
+        st.subheader("🏢 Employer Details")
         col_d1, col_d2 = st.columns(2)
         with col_d1:
-            tan_input = st.text_input("DDO TAN NUMBER * (ENTER FIRST)", value=data.get('ddo_tan', '')).upper()
-            
-            fetched_officer, fetched_father, fetched_addr = "", "", ""
-            if tan_input:
-                conn = sqlite3.connect(DB_NAME)
-                c = conn.cursor()
-                ddo_row = c.execute("SELECT office_address, officer_name, father_name FROM ddo_masters WHERE tan=?", (tan_input,)).fetchone()
-                conn.close()
-                if ddo_row:
-                    fetched_addr, fetched_officer, fetched_father = ddo_row
-
-            employer_address = st.text_area("NAME & ADDRESS OF THE EMPLOYER / OFFICE", value=data.get('employer_address', fetched_addr)).upper()
+            ddo_tan = st.text_input("TAN Number", value=data.get('ddo_tan', ''))
+            employer_address = st.text_area("Name & Address of the Employer", value=data.get('employer_address', ''))
         with col_d2:
-            ddo_officer = st.text_input("DDO OFFICER NAME", value=data.get('ddo_officer', fetched_officer)).upper()
-            ddo_father = st.text_input("DDO OFFICER'S FATHER NAME", value=data.get('ddo_father', fetched_father)).upper()
-            st.text_input("DDO DESIGNATION", value="DRAWING AND DISBURSING OFFICER", disabled=True)
+            ddo_officer = st.text_input("Ddo Officer Name", value=data.get('ddo_officer', ''))
+            ddo_father = st.text_input("Ddo Father Name", value=data.get('ddo_father', ''))
+            st.text_input("Designation", value="Drawing and Disbursing Officer", disabled=True)
 
-        # --- 2. Employee Personal Details ---
-        st.subheader("👤 EMPLOYEE PERSONAL DETAILS")
+        # --- Personal & Employment Details ---
+        st.subheader("👤 Personal & Employment Details")
         col1, col2 = st.columns(2)
         with col1:
-            pan = st.text_input("PAN NUMBER *", value=data.get('pan', '')).upper()
-            name = st.text_input("EMPLOYEE NAME *", value=data.get('name', '')).upper()
-            designation = st.text_input("DESIGNATION (AUTO FROM SLIP)", value=data.get('designation', '')).upper()
-            gpf_no = st.text_input("GPF / PRAN NUMBER", value=data.get('gpf_no', '')).upper()
+            pan = st.text_input("PAN *", value=data.get('pan', ''))
+            name = st.text_input("Full Name *", value=data.get('name', ''))
+            designation = st.text_input("Employee Designation", value=data.get('designation', ''))
         with col2:
-            mobile = st.text_input("MOBILE NUMBER *", value=data.get('mobile', '')).upper()
-            email = st.text_input("EMAIL ADDRESS *", value=data.get('email', '')).upper()
-            office_name = st.text_input("OFFICE NAME & ADDRESS (MANUAL)", value=data.get('office_name', '')).upper()
-            
-            dist_list = ["KHUNTI", "RANCHI", "EAST SINGHBHUM", "DHANBAD", "BOKARO", "HAZARIBAGH", "GUMLA", "SIMDEGA"]
-            d_val = data.get('district', 'KHUNTI')
-            district = st.selectbox("DISTRICT", dist_list, index=dist_list.index(d_val) if d_val in dist_list else 0)
+            mobile = st.text_input("Mobile Number *", value=data.get('mobile', ''))
+            email = st.text_input("Email Address *", value=data.get('email', ''))
+            office_name = st.text_input("Office / School Name & Address", value=data.get('office_name', ''))
 
-        # --- 3. Salary & Tax Configuration ---
-        st.subheader("💰 SALARY & TAX CONFIGURATION")
-        col_t1, col_t2 = st.columns(2)
-        with col_t1:
-            assessment_year = st.selectbox("ASSESSMENT YEAR", ["AY 2026-27 (FY 2025-26)", "AY 2025-26 (FY 2024-25)"])
-            tax_regime = st.selectbox("TAX REGIME", ["NEW REGIME", "OLD REGIME"])
-        with col_t2:
-            arrear_da = st.number_input("ARREAR DA", value=float(data.get('arrear_da', 0)))
-            arrear_pay = st.number_input("ARREAR PAY", value=float(data.get('arrear_pay', 0)))
+        col_3, col_4 = st.columns(2)
+        with col_3:
+            district = st.selectbox(
+                "District",
+                ["KHUNTI", "RANCHI", "EAST SINGHBHUM", "DHANBAD", "BOKARO", "HAZARIBAGH"],
+                index=0 if data.get('district') == 'KHUNTI' else 0
+            )
 
-        # --- 4. Monthly Components ---
-        st.subheader("📊 MONTHLY SALARY COMPONENTS")
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: basic = st.number_input("BASIC PAY", value=float(data.get('basic', 0)))
-        with c2: da = st.number_input("DA", value=float(data.get('da', 0)))
-        with c3: hra = st.number_input("HRA", value=float(data.get('hra', 0)))
-        with c4: medical = st.number_input("MEDICAL", value=float(data.get('medical', 1000)))
+        # Salary Details
+        st.subheader("💰 Salary Details (Monthly)")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            basic = st.number_input("Basic Pay (₹)", value=float(data.get('basic', 0)))
+            da = st.number_input("DA (₹)", value=float(data.get('da', 0)))
+        with col2:
+            hra = st.number_input("HRA (₹)", value=float(data.get('hra', 0)))
+            medical = st.number_input("Medical (₹)", value=float(data.get('medical', 0)))
+        with col3:
+            gpf = st.number_input("GPF (₹)", value=float(data.get('gpf', 0)))
+            tds = st.number_input("TDS (₹)", value=float(data.get('tds', 0)))
 
-        c5, c6, c7 = st.columns(3)
-        with c5: gpf = st.number_input("GPF / NPS", value=float(data.get('gpf', 0)))
-        with c6: gis = st.number_input("GIS", value=float(data.get('gis', 60)))
-        with c7: ptax = st.number_input("PROFESSIONAL TAX (PTAX)", value=float(data.get('ptax', 200)))
+        # Tax Details
+        st.subheader("📊 Tax Details")
+        col1, col2 = st.columns(2)
+        with col1:
+            assessment_year = st.selectbox(
+                "Assessment Year",
+                ["AY 2025-26 (FY 2024-25)", "AY 2026-27 (FY 2025-26)"]
+            )
+        with col2:
+            tax_regime = st.selectbox(
+                "Tax Regime",
+                ["NEW REGIME", "OLD REGIME"]
+            )
 
-        submitted = st.form_submit_button("SAVE & PROCEED TO PAYMENT →", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("Next: Payment →", type="primary", use_container_width=True)
 
         if submitted:
-            if not pan or not name or not tan_input:
-                st.error("KRIPYA SABHI ZAROORI FIELDS BHAREIN: PAN, EMPLOYEE NAME, AUR DDO TAN!")
-            else:
-                # Save Strictly Uppercase to DB
-                conn = sqlite3.connect(DB_NAME)
-                c = conn.cursor()
-                c.execute('''INSERT OR REPLACE INTO employee_profiles (pan, name, designation, mobile, email, office_name, district, gpf_no, updated_at)
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))''',
-                          (pan.upper(), name.upper(), designation.upper(), mobile.upper(), email.upper(), office_name.upper(), district.upper(), gpf_no.upper()))
-                if tan_input:
-                    c.execute('''INSERT OR REPLACE INTO ddo_masters (tan, office_address, officer_name, father_name)
-                                 VALUES (?, ?, ?, ?)''',
-                              (tan_input.upper(), employer_address.upper(), ddo_officer.upper(), ddo_father.upper()))
-                conn.commit()
-                conn.close()
+            # Save to session
+            st.session_state.user_data = {
+                'pan': pan,
+                'name': name,
+                'designation': designation,
+                'mobile': mobile,
+                'email': email,
+                'office_name': office_name,
+                'district': district,
+                'ddo_tan': ddo_tan,
+                'employer_address': employer_address,
+                'ddo_officer': ddo_officer,
+                'ddo_father': ddo_father,
+                'basic': basic,
+                'da': da,
+                'hra': hra,
+                'medical': medical,
+                'gpf': gpf,
+                'tds': tds,
+                'assessment_year': assessment_year,
+                'tax_regime': tax_regime
+            }
+            go_payment()
 
-                st.session_state.user_data = {
-                    'pan': pan.upper(), 'name': name.upper(), 'designation': designation.upper(), 'mobile': mobile.upper(), 'email': email.upper(),
-                    'office_name': office_name.upper(), 'district': district.upper(), 'gpf_no': gpf_no.upper(),
-                    'ddo_tan': tan_input.upper(), 'employer_address': employer_address.upper(),
-                    'ddo_officer': ddo_officer.upper(), 'ddo_father': ddo_father.upper(),
-                    'assessment_year': assessment_year, 'tax_regime': tax_regime,
-                    'basic': basic, 'da': da, 'hra': hra, 'medical': medical,
-                    'gpf': gpf, 'gis': gis, 'ptax': ptax, 'arrear_da': arrear_da, 'arrear_pay': arrear_pay
-                }
-                st.session_state.current_page = 'payment'
-                st.rerun()
+    if st.button("← Back"):
+        go_upload()
 
-    if st.button("← BACK TO UPLOAD"):
-        st.session_state.current_page = 'upload'
-        st.rerun()
 
 def show_payment():
     st.title("💰 STEP 3: PAYMENT")
