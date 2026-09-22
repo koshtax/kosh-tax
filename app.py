@@ -1,4 +1,4 @@
-import streamlit as st
+koi import streamlit as st
 import sqlite3
 from datetime import date
 from utils.salary_parser import parse_salary_slip
@@ -238,19 +238,19 @@ def show_payment():
 
         with tab2:
             st.markdown("**AMOUNT: ₹99**\n\nPAY CASH AT ADMIN OFFICE.")
-            if st.button("I PAID CASH", key="key="..."):
+            if st.button("I PAID CASH", key="cash_paid_btn"):
                 st.session_state.payment_status = 'cash'
                 st.session_state.current_page = 'download'
                 st.rerun()
 
         with tab3:
             st.markdown("**FREE TRIAL COPY** (WATERMARKED)")
-            if st.button("DOWNLOAD TRIAL", key="key="..."):
+            if st.button("DOWNLOAD TRIAL", key="tab3_trial_btn"):
                 st.session_state.payment_status = 'trial'
                 st.session_state.current_page = 'download'
                 st.rerun()
 
-    if st.button("← BACK", key="key="..."):
+    if st.button("← BACK", key="payment_back_btn"):
         st.session_state.current_page = 'review'
         st.rerun()
 
