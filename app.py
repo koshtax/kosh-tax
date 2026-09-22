@@ -201,9 +201,10 @@ def show_review():
                 'assessment_year': assessment_year,
                 'tax_regime': tax_regime
             }
-                if st.button("Next: Payment →", type="primary"):
+                    if st.button("Next: Payment →"):
         st.session_state.current_page = 'payment'
         st.rerun()
+
 
     if st.button("← Back"):
         go_upload()
