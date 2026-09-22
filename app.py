@@ -1320,7 +1320,9 @@ def generate_pdf_bundle(ddo_dict, emp_dict, full_records, tax_summary, deposits=
     return HTML(string=rendered).write_pdf()
 
 # ================= SHARED GENERATOR SUITE =================
-def render_full_employee_suite(is_admin_mode=False, prefix="emp"):
+
+
+    def render_full_employee_suite(is_admin_mode=False, prefix="emp"):
     st.markdown("#### 📄 Salary Slip Upload & Dynamic Auto-Fill")
     slip_up = st.file_uploader(
         "Upload Salary Slip (PDF) — District, Sector, Arrears & Back-dated Months auto-detect ho jayenge:", 
@@ -1333,31 +1335,7 @@ def render_full_employee_suite(is_admin_mode=False, prefix="emp"):
             scanned = parse_slip_in_memory(slip_up)
             st.session_state[f"{prefix}_scanned"] = scanned
             st.session_state[f"{prefix}_last_uploaded"] = slip_up.name
-            scanned = st.session_state.get(f"{prefix}_scanned", {})
-
-    # 📊 Live Summary Dashboard
-    if scanned and scanned.get('basic', 0) > 0:
-        st.markdown("### 📊 Auto-Fetched Live Summary Dashboard")
-        with st.container(border=True):
-            d1, d2, d3, d4 = st.columns(4)
-            d1.metric("Employee Name", scanned.get('name', 'N/A') or 'N/A')
-            d2.metric("PAN Number", scanned.get('pan', 'N/A') or 'N/A')
-            d3.metric("Designation", scanned.get('designation', 'CLERK'))
-            d4.metric("Real Basic Pay", f"₹{scanned.get('basic', 0):,.0f}")
-
-            d5, d6, d7, d8 = st.columns(4)
-            d5.metric("Auto District", scanned.get('auto_district', 'KHUNTI'))
-            d6.metric("Pay Level & GP", scanned.get('pay_level', 'N/A'))
-            d7.metric("Monthly DA", f"₹{scanned.get('da', 0):,.0f}")
-            d8.metric("Increment Month", scanned.get('inc_month', '1ST JULY'))
-
-    # Clerk Hindi Tippan Rule Integration
-    v_des_check = scanned.get('designation', '').upper()
-    hindi_tippan_passed = True
-    if "CLERK" in v_des_check or "LIPIK" in v_des_check:
-        ht_choice = st.radio("📝 Hindi Tippan Exam Passed? (Clerk Cadre Rule):", ["PASSED", "NOT PASSED"], horizontal=True, key=f"{prefix}_ht")
-        hindi_tippan_passed = ("PASSED" in ht_choice)
- 
+            
             if scanned.get('pan'):
                 st.session_state[f"{prefix}_pan_field"] = scanned['pan'].upper()
             if scanned.get('name'):
@@ -1395,7 +1373,30 @@ def render_full_employee_suite(is_admin_mode=False, prefix="emp"):
 
             st.rerun()
 
-    scanned = st.session_state.get(f"{prefix}_scanned", None)
+    scanned = st.session_state.get(f"{prefix}_scanned", {})
+
+    # 📊 Live Summary Dashboard
+    if scanned and scanned.get('basic', 0) > 0:
+        st.markdown("### 📊 Auto-Fetched Live Summary Dashboard")
+        with st.container(border=True):
+            d1, d2, d3, d4 = st.columns(4)
+            d1.metric("Employee Name", scanned.get('name', 'N/A') or 'N/A')
+            d2.metric("PAN Number", scanned.get('pan', 'N/A') or 'N/A')
+            d3.metric("Designation", scanned.get('designation', 'CLERK'))
+            d4.metric("Real Basic Pay", f"₹{scanned.get('basic', 0):,.0f}")
+
+            d5, d6, d7, d8 = st.columns(4)
+            d5.metric("Auto District", scanned.get('auto_district', 'KHUNTI'))
+            d6.metric("Pay Level & GP", scanned.get('pay_level', 'N/A'))
+            d7.metric("Monthly DA", f"₹{scanned.get('da', 0):,.0f}")
+            d8.metric("Increment Month", scanned.get('inc_month', '1ST JULY'))
+
+    # Clerk Hindi Tippan Rule Integration
+    v_des_check = scanned.get('designation', '').upper()
+    hindi_tippan_passed = True
+    if "CLERK" in v_des_check or "LIPIK" in v_des_check:
+        ht_choice = st.radio("📝 Hindi Tippan Exam Passed? (Clerk Cadre Rule):", ["PASSED", "NOT PASSED"], horizontal=True, key=f"{prefix}_ht")
+        hindi_tippan_passed = ("PASSED" in ht_choice)
 
     if scanned and scanned.get('pan'):
         with st.expander("📋 Extracted Slip Data Summary & Auto-Detection Inspection", expanded=True):
@@ -1410,6 +1411,7 @@ def render_full_employee_suite(is_admin_mode=False, prefix="emp"):
             r6.metric("Auto Pay Level & GP", (scanned.get('pay_level') or "LEVEL 7 (GP 4600)").upper())
             r7.metric("DA Arrear Total", f"₹{scanned.get('arrear_da', 0):,.0f}")
             r8.metric("Pay Arrear Total", f"₹{scanned.get('arrear_pay', 0):,.0f}")
+
 
     c_p1, c_p2 = st.columns([2, 1])
     with c_p1:
