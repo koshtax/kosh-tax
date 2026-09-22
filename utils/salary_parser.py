@@ -3,7 +3,7 @@ import re
 
 def parse_salary_slip(file):
     """
-    Extract all components including dynamic Ptax, GIS, and Medical from salary slip PDF
+    Extract data cleanly from salary slip PDF with accurate Name/Designation separation
     """
     extracted = {
         'name': '', 'pan': '', 'designation': '',
@@ -26,7 +26,7 @@ def parse_salary_slip(file):
             extracted['pan'] = pan_match.group(1).upper()
             extracted['confidence'] += 20
 
-        # 2. Extract Designation
+        # 2. Extract Designation first
         found_des = ""
         for des in ["ASSISTANT TEACHER", "TEACHER", "CLERK", "LIPIK", "HEADMASTER", "PRINCIPAL", "ACCOUNTANT"]:
             if des in text_upper:
@@ -34,11 +34,12 @@ def parse_salary_slip(file):
                 break
         extracted['designation'] = found_des.upper()
 
-        # 3. Extract Name cleanly
+        # 3. Extract Name cleanly and slice off attached keywords
         name_match = re.search(r'(?:EMPLOYEE\s*NAME|NAME)\s*[:\-]?\s*([A-Z\s\.]+)', text_upper)
         if name_match:
             raw_name = name_match.group(1)
-            for keyword in ["DESIGNATION", "PAN", "GPF", "PRAN", "DDO", "BASIC"]:
+            # Remove attached garbage or labels like DESIGNATION, PAN, etc.
+            for keyword in ["DESIGNATION", "PAN", "GPF", "PRAN", "DDO", "BASIC", "EMPLOYEE"]:
                 if keyword in raw_name:
                     raw_name = raw_name.split(keyword)[0]
             extracted['name'] = raw_name.strip().upper()
