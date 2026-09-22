@@ -210,11 +210,6 @@ def show_review():
         go_upload()
 
 
-
-    if st.button("← Back"):
-        go_upload()
-
-
 def show_payment():
     st.title("💰 STEP 3: PAYMENT")
     mode = st.session_state.get('mode', 'paid')
