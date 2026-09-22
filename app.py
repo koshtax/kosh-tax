@@ -88,6 +88,16 @@ def show_upload():
 
             st.session_state.extracted_data = {**scanned, **saved_profile}
             st.success("✅ SALARY SLIP SCANNED SUCCESSFULLY!")
+
+            # Display Extracted Summary on same page
+            st.markdown("### 📊 Extracted Summary")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Name", st.session_state.extracted_data.get('name', 'N/A'))
+            with col2:
+                st.metric("PAN", st.session_state.extracted_data.get('pan', 'N/A'))
+            with col3:
+                st.metric("Basic Pay", f"₹{st.session_state.extracted_data.get('basic', 0):,}")
             
             if saved_profile:
                 st.info("🔄 RETURNING USER RECOGNIZED! Office details and contact info auto-loaded from previous records.")
@@ -99,6 +109,7 @@ def show_upload():
     if st.button("← BACK TO HOME"):
         st.session_state.current_page = 'home'
         st.rerun()
+
 
 # Review Page
 def show_review():
