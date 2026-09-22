@@ -1,6 +1,0 @@
-streamlit
-weasyprint
-jinja2
-openpyxl
-pypdf
-pandas
