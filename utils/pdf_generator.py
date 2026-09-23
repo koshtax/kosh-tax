@@ -4,11 +4,11 @@ import weasyprint
 
 def generate_form16_pdf(data, is_trial=False):
     """
-    Final Audited & Error-Free Form 16 PDF Generator (4 Pages Official Format)
+    Final Audited & Bulletproof Form 16 PDF Generator (4 Pages Official Format)
     - Page 1: Schedule of Income Tax (Portrait with complete income & slab breakdown)
     - Page 2: Form 16 Part A Summary & Quarter/Challan Tables (Portrait)
     - Page 3: Form 16 Part B Annexure & Chapter VI-A Deductions 80C/80D (Portrait)
-    - Page 4: Monthly Salary & Arrears Ledger (Landscape, Dynamic 1-15+ rows, No data hiding)
+    - Page 4: Monthly Salary & Arrears Ledger (Landscape, Dynamic 1-15+ rows, Combined months & automatic Arrear tags)
     """
     try:
         basic = float(data.get('basic', 0) or 0)
@@ -36,7 +36,7 @@ def generate_form16_pdf(data, is_trial=False):
         total_calc_net = 0.0
 
         if raw_entries:
-            for entry in raw_entries:
+            for index, entry in enumerate(raw_entries):
                 eb = float(entry.get('basic', 0) or 0)
                 ed = float(entry.get('da', 0) or 0)
                 eh = float(entry.get('hra', 0) or 0)
@@ -47,6 +47,13 @@ def generate_form16_pdf(data, is_trial=False):
                 etds = float(entry.get('tds', 0) or 0)
                 enet = float(entry.get('net', eg - (egpf + ept + etds)) or (eg - (egpf + ept + etds)))
                 
+                # Automatic Arrear Tagging for extra or subsequent entries beyond standard 12 months
+                raw_name = str(entry.get('month_name', f'Month {index+1}'))
+                if index >= 12 and not any(word in raw_name.lower() for word in ['arrear', 'bakaya', 'baki']):
+                    month_label = f"{raw_name} (Arrear)"
+                else:
+                    month_label = raw_name
+
                 total_calc_basic += eb
                 total_calc_da += ed
                 total_calc_hra += eh
@@ -58,7 +65,7 @@ def generate_form16_pdf(data, is_trial=False):
                 total_calc_net += enet
 
                 monthly_entries.append({
-                    'month_name': entry.get('month_name', 'Regular / Arrear'),
+                    'month_name': month_label,
                     'basic': eb, 'da': ed, 'hra': eh, 'medical': em,
                     'gross': eg, 'gpf': egpf, 'ptax': ept, 'tds': etds, 'net': enet
                 })
@@ -405,7 +412,7 @@ def generate_form16_pdf(data, is_trial=False):
 
   <table>
     <tr class="bold center" style="background-color: #e6e6e6; font-size: 8.5px;">
-      <td>क्र.सं. / माह विवरण</td>
+      <td>क्र.सं. / माह विवरण (Month / Period)</td>
       <td>मूल वेतन (Basic)</td>
       <td>महंगाई भत्ता (DA)</td>
       <td>मकान किराया (HRA)</td>
