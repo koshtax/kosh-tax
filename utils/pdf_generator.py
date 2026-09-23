@@ -4,11 +4,11 @@ import weasyprint
 
 def generate_form16_pdf(data, is_trial=False):
     """
-    Final Audited & Bulletproof Form 16 PDF Generator (4 Pages Official Format)
-    - Page 1: Schedule of Income Tax (Portrait with complete income & slab breakdown)
+    Final Audited & Strict-Logic Form 16 PDF Generator (4 Pages Official Format)
+    - Page 1: Schedule of Income Tax (Portrait)
     - Page 2: Form 16 Part A Summary & Quarter/Challan Tables (Portrait)
     - Page 3: Form 16 Part B Annexure & Chapter VI-A Deductions 80C/80D (Portrait)
-    - Page 4: Monthly Salary & Arrears Ledger (Landscape, Dynamic 1-15+ rows, Combined months & automatic Arrear tags)
+    - Page 4: Monthly Salary & Arrears Ledger (Landscape, Dynamic rows, Combined months & automatic Arrear tags)
     """
     try:
         basic = float(data.get('basic', 0) or 0)
@@ -47,7 +47,7 @@ def generate_form16_pdf(data, is_trial=False):
                 etds = float(entry.get('tds', 0) or 0)
                 enet = float(entry.get('net', eg - (egpf + ept + etds)) or (eg - (egpf + ept + etds)))
                 
-                # Automatic Arrear Tagging for extra or subsequent entries beyond standard 12 months
+                # Combined month or strict month naming with automatic arrear tag for extra entries
                 raw_name = str(entry.get('month_name', f'Month {index+1}'))
                 if index >= 12 and not any(word in raw_name.lower() for word in ['arrear', 'bakaya', 'baki']):
                     month_label = f"{raw_name} (Arrear)"
