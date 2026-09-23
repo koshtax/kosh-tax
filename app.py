@@ -199,11 +199,9 @@ def show_review():
                 'tds': tds,
                 'assessment_year': assessment_year,
                 'tax_regime': tax_regime
-            
-        st.markdown("---")
+            }      
+                st.markdown("---")
         submitted = st.form_submit_button("Next: Payment →", type="primary", use_container_width=True, key="form_next_payment_btn")
-            
-}
         if submitted:
             st.session_state.user_data = data
             st.session_state.current_page = 'payment'
@@ -212,6 +210,7 @@ def show_review():
     if st.button("← Back to Upload", key="rev_back_btn"):
         st.session_state.current_page = 'upload'
         st.rerun()
+
     
 def show_payment():
     st.title("💰 STEP 3: PAYMENT")
