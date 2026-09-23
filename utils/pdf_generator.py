@@ -185,8 +185,8 @@ def generate_form16_pdf(data, is_trial=False):
 </html>
 """
 
-    template = Template(html_template)
-    html_content = template.render(
+        template = Template(html_template)
+        html_content = template.render(
         data=data,
         gross=gross,
         basic=basic,
@@ -202,7 +202,7 @@ def generate_form16_pdf(data, is_trial=False):
         is_trial=is_trial
     )
 
-    # Use Weasyprint HTML render directly to bytes without tempfile / pydyf signature conflict
+    # Safe render method to avoid signature mismatch
     html_doc = weasyprint.HTML(string=html_content)
-    pdf_bytes = html_doc.write_pdf()
+    pdf_bytes = html_doc.render().write_pdf()
     return pdf_bytes
