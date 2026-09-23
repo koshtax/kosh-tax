@@ -6,6 +6,27 @@ from utils.pdf_generator import generate_form16_pdf
 from utils.tax_calculator import calculate_tax
 from utils.trial_watermark import is_trial_mode
 
+
+# 1. File Uploader UI Streamlit mein
+uploaded_file = st.file_uploader("Upload Salary Slip PDF", type=["pdf"])
+
+if uploaded_file is not None:
+    # 2. Parse salary slip to get all multi-block entries and summary data
+    extracted_data = parse_salary_slip(uploaded_file)
+    
+    st.success(f"Total entries parsed successfully: {len(extracted_data.get('monthly_entries', []))}")
+
+    # 3. Generate Form 16 PDF bytes
+    pdf_bytes = generate_form16_pdf(extracted_data, is_trial=True)
+
+    # 4. Streamlit Download Button to download the 4-page PDF
+    st.download_button(
+        label="📥 Download Form 16 PDF",
+        data=pdf_bytes,
+        file_name="Form16_Final_Audited.pdf",
+        mime="application/pdf"
+    )
+
 # ================= PAGE CONFIGURATION =================
 st.set_page_config(
     page_title="Kosh-Tax | Form 16 & TDS Manager",
