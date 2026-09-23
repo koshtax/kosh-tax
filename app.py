@@ -210,7 +210,7 @@ def show_review():
     if st.button("← Back to Upload", key="rev_back_btn"):
         st.session_state.current_page = 'upload'
         st.rerun()
-
+}
     
 def show_payment():
     st.title("💰 STEP 3: PAYMENT")
