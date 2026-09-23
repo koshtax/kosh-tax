@@ -795,13 +795,13 @@ HTML_TEMPLATE = r"""
 
 @font-face {
     font-family: "NotoSansDevanagariLocal";
-    src: url("fonts/NotoSansDevanagari-Regular.ttf");
+    src: url("{{ regular_font_url }}") format("truetype");
     font-weight: 400;
 }
 
 @font-face {
     font-family: "NotoSansDevanagariLocal";
-    src: url("fonts/NotoSansDevanagari-Bold.ttf");
+    src: url("{{ bold_font_url }}") format("truetype");
     font-weight: 700;
 }
 
@@ -922,12 +922,10 @@ th {
     z-index: -1;
 }
 
-/* Prevent a table from being wider than the printable A4 area. */
 .auto-fit {
     max-width: 100%;
 }
 
-/* Wide monthly ledger */
 .ledger {
     font-size: 6.8pt;
 }
@@ -957,14 +955,14 @@ th {
 <div class="page">
 
 <div class="title-box">
-    <div class="title">{{ "à¤¨à¤ à¤à¤° à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾" if tax_regime == "new" else "à¤ªà¥à¤°à¤¾à¤¨à¥ à¤à¤° à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾" }} - SCHEDULE OF INCOME - TAX (à¤à¤¯à¤à¤° à¤à¥ à¤à¤¨à¥à¤¸à¥à¤à¥)</div>
+    <div class="title">{{ "नई कर व्यवस्था" if tax_regime == "new" else "पुरानी कर व्यवस्था" }} - SCHEDULE OF INCOME - TAX (आयकर की अनुसूची)</div>
     <div class="subtitle">
-        (à¤à¤¾à¤° à¤ªà¥à¤°à¤¤à¤¿à¤¯à¥à¤ à¤®à¥à¤ à¤­à¤° à¤à¤° à¤¦à¥à¤) |
-        à¤µà¤¿à¤¤à¥à¤¤à¥à¤¯ à¤µà¤°à¥à¤· {{ config.financial_year }}
+        (चार प्रतियों में भर कर दें) |
+        वित्तीय वर्ष {{ config.financial_year }}
         {% if config.tax_year %}
-            (à¤à¤° à¤µà¤°à¥à¤· {{ config.tax_year }})
+            (कर वर्ष {{ config.tax_year }})
         {% elif config.assessment_year %}
-            (à¤à¤° à¤¨à¤¿à¤°à¥à¤§à¤¾à¤°à¤£ à¤µà¤°à¥à¤· {{ config.assessment_year }})
+            (कर निर्धारण वर्ष {{ config.assessment_year }})
         {% endif %}
     </div>
 </div>
@@ -973,22 +971,22 @@ th {
     <tbody>
     <tr>
         <td colspan="2">
-            <b>à¤à¤°à¤¦à¤¾à¤¤à¤¾ à¤à¤¾ à¤¨à¤¾à¤® / Name:</b> {{ data.name }}<br>
-            <b>à¤ªà¤¦à¤¨à¤¾à¤® / Designation:</b> {{ data.designation }}<br>
-            <b>à¤à¤¾à¤°à¥à¤¯à¤¾à¤²à¤¯/à¤µà¤¿à¤¦à¥à¤¯à¤¾à¤²à¤¯ à¤à¤¾ à¤¨à¤¾à¤® / Office:</b> {{ data.office_name }}<br>
-            <b>à¤¸à¥à¤¥à¤¾à¤¯à¥ à¤²à¥à¤à¤¾ à¤¸à¤à¤à¥à¤¯à¤¾ (PAN):</b> {{ data.pan }}
+            <b>करदाता का नाम / Name:</b> {{ data.name }}<br>
+            <b>पदनाम / Designation:</b> {{ data.designation }}<br>
+            <b>कार्यालय/विद्यालय का नाम / Office:</b> {{ data.office_name }}<br>
+            <b>स्थायी लेखा संख्या (PAN):</b> {{ data.pan }}
         </td>
     </tr>
     <tr>
         <td style="width:75%">
-            <b>à¤. à¤µà¥à¤¤à¤¨ à¤¸à¥à¤°à¥à¤¤ à¤¸à¥ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤à¤¯ à¤à¤¾ à¤µà¤¿à¤µà¤°à¤£ :-</b><br>
-            01. à¤µà¥à¤¤à¤¨<br>
-            02. à¤®à¤¹à¤à¤à¤¾à¤ à¤­à¤¤à¥à¤¤à¤¾ (DA)<br>
-            03. à¤®à¤à¤¾à¤¨ à¤à¤¿à¤°à¤¾à¤¯à¤¾ à¤­à¤¤à¥à¤¤à¤¾ (HRA)<br>
-            04. à¤à¤¿à¤à¤¿à¤¤à¥à¤¸à¤¾ à¤­à¤¤à¥à¤¤à¤¾ (Medical Allowance)<br>
-            05. à¤ªà¤°à¤¿à¤µà¤¹à¤¨ à¤­à¤¤à¥à¤¤à¤¾ / à¤à¤¨à¥à¤¯ à¤­à¤¤à¥à¤¤à¥<br>
-            06. à¤¬à¤à¤¾à¤¯à¤¾ à¤µà¥à¤¤à¤¨ à¤à¤µà¤ à¤­à¤¤à¥à¤¤à¥ à¤à¥ à¤°à¤¾à¤¶à¤¿ (Arrears / Bakaya Vetan)<br>
-            <b>07. à¤µà¥à¤¤à¤¨ à¤¸à¥à¤°à¥à¤¤ à¤¸à¥ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤à¥à¤² à¤à¤¯ (Gross Total Income)</b>
+            <b>क. वेतन स्रोत से प्राप्त आय का विवरण :-</b><br>
+            01. वेतन<br>
+            02. महँगाई भत्ता (DA)<br>
+            03. मकान किराया भत्ता (HRA)<br>
+            04. चिकित्सा भत्ता (Medical Allowance)<br>
+            05. परिवहन भत्ता / अन्य भत्ते<br>
+            06. बकाया वेतन एवं भत्ते की राशि (Arrears / Bakaya Vetan)<br>
+            <b>07. वेतन स्रोत से प्राप्त कुल आय (Gross Total Income)</b>
         </td>
         <td style="width:25%" class="right">
             <br>
@@ -1008,15 +1006,15 @@ th {
     <tbody>
     <tr>
         <td style="width:75%">
-            <b>à¤. à¤à¤¯à¤à¤° à¤à¥ à¤¸à¤à¤à¤£à¤¨à¤¾ (Tax Computation):-</b><br>
-            01. à¤µà¥à¤¤à¤¨ à¤¸à¥à¤°à¥à¤¤ à¤¸à¥ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤à¥à¤² à¤à¤¯<br>
-            02. à¤à¤à¤¾à¤¯à¥à¤ - à¤§à¤¾à¤°à¤¾ 16(ia) à¤à¥ à¤à¤¨à¥à¤¤à¤°à¥à¤à¤¤ à¤®à¤¾à¤¨à¤ à¤à¤à¥à¤¤à¥ (Standard Deduction)<br>
-            03. à¤¸à¤à¤² à¤à¥à¤² à¤à¤¯ (Gross Total Income)<br>
-            04. à¤à¤° à¤¯à¥à¤à¥à¤¯ à¤à¤¯ (Taxable Income)<br>
-            05. à¤¦à¥à¤¯ à¤à¤¯à¤à¤° (Tax on Total Income)<br>
-            06. à¤à¤à¤¾à¤¯à¥à¤ - à¤§à¤¾à¤°à¤¾ 87A à¤à¥ à¤¤à¤¹à¤¤ à¤à¤° à¤®à¥à¤ à¤°à¤¾à¤¹à¤¤ (Rebate)<br>
-            07. à¤¶à¤¿à¤à¥à¤·à¤¾ à¤à¤ªà¤à¤° / Cess<br>
-            <b>08. à¤¶à¥à¤¦à¥à¤§ à¤¦à¥à¤¯ à¤à¤¯à¤à¤° (Net Tax Payable)</b>
+            <b>ख. आयकर की संगणना (Tax Computation):-</b><br>
+            01. वेतन स्रोत से प्राप्त कुल आय<br>
+            02. घटायें - धारा 16(ia) के अन्तर्गत मानक कटौती (Standard Deduction)<br>
+            03. सकल कुल आय (Gross Total Income)<br>
+            04. कर योग्य आय (Taxable Income)<br>
+            05. देय आयकर (Tax on Total Income)<br>
+            06. घटायें - धारा 87A के तहत कर में राहत (Rebate)<br>
+            07. शिक्षा उपकर / Cess<br>
+            <b>08. शुद्ध देय आयकर (Net Tax Payable)</b>
         </td>
         <td style="width:25%" class="right">
             <br>
@@ -1034,7 +1032,7 @@ th {
 </table>
 
 {% if config.tax_rules %}
-<div class="section-title">Configured Tax Rules / à¤à¤° à¤¨à¤¿à¤¯à¤®</div>
+<div class="section-title">Configured Tax Rules / कर नियम</div>
 <table class="small">
     <thead>
     <tr class="shade">
@@ -1064,7 +1062,7 @@ th {
 
 <div class="title-box">
     <div class="title">FORM NO. 16 - PART A</div>
-    <div class="subtitle">Certificate under Section 203 â Summary of amount paid/credited and tax deducted at source</div>
+    <div class="subtitle">Certificate under Section 203 — Summary of amount paid/credited and tax deducted at source</div>
 </div>
 
 <table>
@@ -1375,28 +1373,28 @@ th {
 
 <div class="title-box">
     <div class="title">
-        à¤µà¤¿à¤¤à¥à¤¤à¥à¤¯ à¤µà¤°à¥à¤· {{ config.financial_year }} à¤®à¥à¤ à¤µà¥à¤¤à¤¨ à¤¸à¥à¤°à¥à¤¤ à¤¸à¥ à¤à¤¯ à¤à¤° à¤à¤à¥à¤¤à¤¿à¤¯à¥à¤ à¤à¥ à¤µà¤¿à¤µà¤°à¤£à¥
+        वित्तीय वर्ष {{ config.financial_year }} में वेतन स्रोत से आय और कटौतियों की विवरणी
     </div>
     <div class="subtitle">
-        à¤¨à¤¾à¤®: {{ data.name }} |
-        à¤ªà¤¦à¤¨à¤¾à¤®: {{ data.designation }} |
-        à¤à¤¾à¤°à¥à¤¯à¤¾à¤²à¤¯: {{ data.office_name }}
+        नाम: {{ data.name }} |
+        पदनाम: {{ data.designation }} |
+        कार्यालय: {{ data.office_name }}
     </div>
 </div>
 
 <table class="ledger">
     <thead>
     <tr class="shade">
-        <th class="month-col">à¤à¥à¤°.à¤¸à¤. / à¤®à¤¾à¤¹ à¤µà¤¿à¤µà¤°à¤£</th>
-        <th class="num-col">à¤®à¥à¤² à¤µà¥à¤¤à¤¨<br>(Basic)</th>
-        <th class="num-col">à¤®à¤¹à¤à¤à¤¾à¤ à¤­à¤¤à¥à¤¤à¤¾<br>(DA)</th>
-        <th class="num-col">à¤®à¤à¤¾à¤¨ à¤à¤¿à¤°à¤¾à¤¯à¤¾<br>(HRA)</th>
-        <th class="num-col">à¤à¤¿à¤à¤¿à¤¤à¥à¤¸à¤¾<br>(Med)</th>
-        <th class="num-col">à¤à¥à¤² à¤¯à¥à¤<br>(Gross)</th>
+        <th class="month-col">क्र.सं. / माह विवरण</th>
+        <th class="num-col">मूल वेतन<br>(Basic)</th>
+        <th class="num-col">महंगाई भत्ता<br>(DA)</th>
+        <th class="num-col">मकान किराया<br>(HRA)</th>
+        <th class="num-col">चिकित्सा<br>(Med)</th>
+        <th class="num-col">कुल योग<br>(Gross)</th>
         <th class="num-col">GPF</th>
         <th class="num-col">P.Tax</th>
         <th class="num-col">TDS</th>
-        <th class="num-col">à¤¶à¥à¤¦à¥à¤§ à¤µà¥à¤¤à¤¨<br>(Net)</th>
+        <th class="num-col">शुद्ध वेतन<br>(Net)</th>
     </tr>
     </thead>
 
@@ -1424,7 +1422,7 @@ th {
     {% endif %}
 
     <tr class="total">
-        <td>à¤à¥à¤² à¤¯à¥à¤ (GRAND TOTAL)</td>
+        <td>कुल योग (GRAND TOTAL)</td>
         <td class="right">{{ money(totals.basic) }}</td>
         <td class="right">{{ money(totals.da) }}</td>
         <td class="right">{{ money(totals.hra) }}</td>
@@ -1458,6 +1456,7 @@ th {
 </body>
 </html>
 """
+
 
 
 # ---------------------------------------------------------------------------
