@@ -200,10 +200,6 @@ def show_review():
                 'assessment_year': assessment_year,
                 'tax_regime': tax_regime
             }      
-                st.markdown("---")
-        submitted = st.form_submit_button("Next: Payment →", type="primary", use_container_width=True, key="form_next_payment_btn")
-        if submitted:
-            st.session_state.user_data = data
             st.session_state.current_page = 'payment'
             st.rerun()
 
