@@ -202,6 +202,13 @@ def show_review():
                 'tax_regime': tax_regime
             }
 
+      if st.button("Next: Payment →"):
+         st.session_state.current_page = 'payment'
+         st.rerun()
+
+      if st.button("← Back"):
+         go_upload()
+
     
 def show_payment():
     st.title("💰 STEP 3: PAYMENT")
