@@ -131,7 +131,7 @@ def _is_arrear(month_name: str, index: int, explicit: Any = None) -> bool:
         return bool(explicit)
 
     s = _clean(month_name).lower()
-    arrear_words = ("arrear", "bakaya", "baki", "बकाया")
+    arrear_words = ("arrear", "bakaya", "baki", "à¤¬à¤à¤¾à¤¯à¤¾")
     if any(word in s for word in arrear_words):
         return True
 
@@ -448,20 +448,114 @@ def detect_year_info_from_salary_pdf(pdf_path: str) -> Dict[str, Any]:
     return detect_year_info_from_text(text, filename=Path(pdf_path).name)
 
 
-def _resolve_year_config(data: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Resolve year information before rendering.
+def _infer_year_info_from_ledger(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Best-effort backward-compatible FY inference from legacy ledger rows.
 
-    `data["year_info"]` can be supplied by the application after PDF detection.
-    `data["salary_pdf_path"]` is supported as a convenience fallback.
+    Older app.py versions did not pass ``year_info`` or ``salary_pdf_path`` to
+    the generator.  In that case we can still recover the FY from the dated
+    salary rows.  Explicit/non-arrear rows are preferred; arrear rows are
+    treated as historical evidence only.  The result is marked as inferred so
+    the UI/application can warn the user rather than treating it as authoritative.
     """
+    if not entries:
+        return {}
+
+    counts: Dict[str, int] = {}
+    examples: Dict[str, List[str]] = {}
+    for row in entries:
+        if bool(row.get("is_arrear")):
+            continue
+        parsed = _parse_month_year_label(str(row.get("month_name", "")))
+        if not parsed:
+            continue
+        month, year = parsed
+        fy = _fy_from_month_year(month, year)
+        counts[fy] = counts.get(fy, 0) + 1
+        examples.setdefault(fy, []).append(str(row.get("month_name", "")))
+
+    # If every dated normal row is historical/arrear, fall back to all rows.
+    if not counts:
+        for row in entries:
+            parsed = _parse_month_year_label(str(row.get("month_name", "")))
+            if not parsed:
+                continue
+            month, year = parsed
+            fy = _fy_from_month_year(month, year)
+            counts[fy] = counts.get(fy, 0) + 1
+            examples.setdefault(fy, []).append(str(row.get("month_name", "")))
+
+    if not counts:
+        return {}
+
+    # Most represented FY wins; latest FY breaks ties.
+    resolved_fy = sorted(counts, key=lambda fy: (counts[fy], int(fy[:4])))[-1]
+    start = int(resolved_fy[:4])
+    end = start + 1
+    if start < 2026:
+        ay = f"{end}-{str(end + 1)[-2:]}"
+        tax_year = None
+        label = f"FY {resolved_fy} / AY {ay}"
+    else:
+        ay = None
+        tax_year = resolved_fy
+        label = f"FY {resolved_fy} / Tax Year {tax_year}"
+
+    warnings = []
+    if len(counts) > 1:
+        warnings.append(
+            "Ledger rows span multiple financial years: " + ", ".join(
+                f"{fy} ({counts[fy]} row(s))" for fy in sorted(counts)
+            )
+        )
+    warnings.append(
+        f"Financial year {resolved_fy} was inferred from legacy salary-ledger rows because app data did not supply year_info."
+    )
+    return {
+        "financial_year": resolved_fy,
+        "assessment_year": ay,
+        "tax_year": tax_year,
+        "period_start": f"{start}-04-01",
+        "period_end": f"{end}-03-31",
+        "confidence": "medium" if len(counts) == 1 else "low",
+        "source": "monthly_entries",
+        "legal_year_label": label,
+        "warnings": warnings,
+        "requires_manual_confirmation": True,
+    }
+
+
+def _resolve_year_config(data: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
+    """Resolve year information before rendering, including legacy app inputs."""
     supplied = data.get("year_info")
+    detected: Dict[str, Any] = {}
+
     if isinstance(supplied, dict) and supplied.get("financial_year"):
         detected = dict(supplied)
     elif data.get("salary_pdf_path"):
         detected = detect_year_info_from_salary_pdf(data["salary_pdf_path"])
     else:
-        detected = {}
+        # Backward compatibility: older app.py may pass year fields directly.
+        direct_fy = data.get("financial_year") or data.get("fy")
+        direct_ay = data.get("assessment_year") or data.get("ay")
+        direct_ty = data.get("tax_year")
+        if direct_fy:
+            detected = {"financial_year": str(direct_fy)}
+            if direct_ay:
+                detected["assessment_year"] = str(direct_ay)
+            if direct_ty:
+                detected["tax_year"] = str(direct_ty)
+            detected["source"] = "data_field"
+        elif direct_ty:
+            detected = {
+                "financial_year": str(direct_ty),
+                "tax_year": str(direct_ty),
+                "assessment_year": None,
+                "source": "data_field",
+            }
+
+    # Last-resort compatibility path: infer from the ledger itself.
+    if not detected.get("financial_year") and data.get("monthly_entries"):
+        detected = _infer_year_info_from_ledger(data.get("monthly_entries") or [])
 
     if detected.get("financial_year"):
         config["financial_year"] = detected["financial_year"]
@@ -516,7 +610,7 @@ def _infer_arrear_flags(entries: List[Dict[str, Any]], financial_year: Optional[
         if row.get("is_arrear"):
             continue
         label = _clean(row.get("month_name"), "").lower()
-        if any(word in label for word in ("arrear", "bakaya", "baki", "बकाया")):
+        if any(word in label for word in ("arrear", "bakaya", "baki", "à¤¬à¤à¤¾à¤¯à¤¾")):
             row["is_arrear"] = True
         elif re.search(r"\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s*20\d{2}\s*[-/]\s*", label):
             row["is_arrear"] = True
@@ -863,14 +957,14 @@ th {
 <div class="page">
 
 <div class="title-box">
-    <div class="title">{{ "नई कर व्यवस्था" if tax_regime == "new" else "पुरानी कर व्यवस्था" }} - SCHEDULE OF INCOME - TAX (आयकर की अनुसूची)</div>
+    <div class="title">{{ "à¤¨à¤ à¤à¤° à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾" if tax_regime == "new" else "à¤ªà¥à¤°à¤¾à¤¨à¥ à¤à¤° à¤µà¥à¤¯à¤µà¤¸à¥à¤¥à¤¾" }} - SCHEDULE OF INCOME - TAX (à¤à¤¯à¤à¤° à¤à¥ à¤à¤¨à¥à¤¸à¥à¤à¥)</div>
     <div class="subtitle">
-        (चार प्रतियों में भर कर दें) |
-        वित्तीय वर्ष {{ config.financial_year }}
+        (à¤à¤¾à¤° à¤ªà¥à¤°à¤¤à¤¿à¤¯à¥à¤ à¤®à¥à¤ à¤­à¤° à¤à¤° à¤¦à¥à¤) |
+        à¤µà¤¿à¤¤à¥à¤¤à¥à¤¯ à¤µà¤°à¥à¤· {{ config.financial_year }}
         {% if config.tax_year %}
-            (कर वर्ष {{ config.tax_year }})
+            (à¤à¤° à¤µà¤°à¥à¤· {{ config.tax_year }})
         {% elif config.assessment_year %}
-            (कर निर्धारण वर्ष {{ config.assessment_year }})
+            (à¤à¤° à¤¨à¤¿à¤°à¥à¤§à¤¾à¤°à¤£ à¤µà¤°à¥à¤· {{ config.assessment_year }})
         {% endif %}
     </div>
 </div>
@@ -879,22 +973,22 @@ th {
     <tbody>
     <tr>
         <td colspan="2">
-            <b>करदाता का नाम / Name:</b> {{ data.name }}<br>
-            <b>पदनाम / Designation:</b> {{ data.designation }}<br>
-            <b>कार्यालय/विद्यालय का नाम / Office:</b> {{ data.office_name }}<br>
-            <b>स्थायी लेखा संख्या (PAN):</b> {{ data.pan }}
+            <b>à¤à¤°à¤¦à¤¾à¤¤à¤¾ à¤à¤¾ à¤¨à¤¾à¤® / Name:</b> {{ data.name }}<br>
+            <b>à¤ªà¤¦à¤¨à¤¾à¤® / Designation:</b> {{ data.designation }}<br>
+            <b>à¤à¤¾à¤°à¥à¤¯à¤¾à¤²à¤¯/à¤µà¤¿à¤¦à¥à¤¯à¤¾à¤²à¤¯ à¤à¤¾ à¤¨à¤¾à¤® / Office:</b> {{ data.office_name }}<br>
+            <b>à¤¸à¥à¤¥à¤¾à¤¯à¥ à¤²à¥à¤à¤¾ à¤¸à¤à¤à¥à¤¯à¤¾ (PAN):</b> {{ data.pan }}
         </td>
     </tr>
     <tr>
         <td style="width:75%">
-            <b>क. वेतन स्रोत से प्राप्त आय का विवरण :-</b><br>
-            01. वेतन<br>
-            02. महँगाई भत्ता (DA)<br>
-            03. मकान किराया भत्ता (HRA)<br>
-            04. चिकित्सा भत्ता (Medical Allowance)<br>
-            05. परिवहन भत्ता / अन्य भत्ते<br>
-            06. बकाया वेतन एवं भत्ते की राशि (Arrears / Bakaya Vetan)<br>
-            <b>07. वेतन स्रोत से प्राप्त कुल आय (Gross Total Income)</b>
+            <b>à¤. à¤µà¥à¤¤à¤¨ à¤¸à¥à¤°à¥à¤¤ à¤¸à¥ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤à¤¯ à¤à¤¾ à¤µà¤¿à¤µà¤°à¤£ :-</b><br>
+            01. à¤µà¥à¤¤à¤¨<br>
+            02. à¤®à¤¹à¤à¤à¤¾à¤ à¤­à¤¤à¥à¤¤à¤¾ (DA)<br>
+            03. à¤®à¤à¤¾à¤¨ à¤à¤¿à¤°à¤¾à¤¯à¤¾ à¤­à¤¤à¥à¤¤à¤¾ (HRA)<br>
+            04. à¤à¤¿à¤à¤¿à¤¤à¥à¤¸à¤¾ à¤­à¤¤à¥à¤¤à¤¾ (Medical Allowance)<br>
+            05. à¤ªà¤°à¤¿à¤µà¤¹à¤¨ à¤­à¤¤à¥à¤¤à¤¾ / à¤à¤¨à¥à¤¯ à¤­à¤¤à¥à¤¤à¥<br>
+            06. à¤¬à¤à¤¾à¤¯à¤¾ à¤µà¥à¤¤à¤¨ à¤à¤µà¤ à¤­à¤¤à¥à¤¤à¥ à¤à¥ à¤°à¤¾à¤¶à¤¿ (Arrears / Bakaya Vetan)<br>
+            <b>07. à¤µà¥à¤¤à¤¨ à¤¸à¥à¤°à¥à¤¤ à¤¸à¥ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤à¥à¤² à¤à¤¯ (Gross Total Income)</b>
         </td>
         <td style="width:25%" class="right">
             <br>
@@ -914,15 +1008,15 @@ th {
     <tbody>
     <tr>
         <td style="width:75%">
-            <b>ख. आयकर की संगणना (Tax Computation):-</b><br>
-            01. वेतन स्रोत से प्राप्त कुल आय<br>
-            02. घटायें - धारा 16(ia) के अन्तर्गत मानक कटौती (Standard Deduction)<br>
-            03. सकल कुल आय (Gross Total Income)<br>
-            04. कर योग्य आय (Taxable Income)<br>
-            05. देय आयकर (Tax on Total Income)<br>
-            06. घटायें - धारा 87A के तहत कर में राहत (Rebate)<br>
-            07. शिक्षा उपकर / Cess<br>
-            <b>08. शुद्ध देय आयकर (Net Tax Payable)</b>
+            <b>à¤. à¤à¤¯à¤à¤° à¤à¥ à¤¸à¤à¤à¤£à¤¨à¤¾ (Tax Computation):-</b><br>
+            01. à¤µà¥à¤¤à¤¨ à¤¸à¥à¤°à¥à¤¤ à¤¸à¥ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤à¥à¤² à¤à¤¯<br>
+            02. à¤à¤à¤¾à¤¯à¥à¤ - à¤§à¤¾à¤°à¤¾ 16(ia) à¤à¥ à¤à¤¨à¥à¤¤à¤°à¥à¤à¤¤ à¤®à¤¾à¤¨à¤ à¤à¤à¥à¤¤à¥ (Standard Deduction)<br>
+            03. à¤¸à¤à¤² à¤à¥à¤² à¤à¤¯ (Gross Total Income)<br>
+            04. à¤à¤° à¤¯à¥à¤à¥à¤¯ à¤à¤¯ (Taxable Income)<br>
+            05. à¤¦à¥à¤¯ à¤à¤¯à¤à¤° (Tax on Total Income)<br>
+            06. à¤à¤à¤¾à¤¯à¥à¤ - à¤§à¤¾à¤°à¤¾ 87A à¤à¥ à¤¤à¤¹à¤¤ à¤à¤° à¤®à¥à¤ à¤°à¤¾à¤¹à¤¤ (Rebate)<br>
+            07. à¤¶à¤¿à¤à¥à¤·à¤¾ à¤à¤ªà¤à¤° / Cess<br>
+            <b>08. à¤¶à¥à¤¦à¥à¤§ à¤¦à¥à¤¯ à¤à¤¯à¤à¤° (Net Tax Payable)</b>
         </td>
         <td style="width:25%" class="right">
             <br>
@@ -940,7 +1034,7 @@ th {
 </table>
 
 {% if config.tax_rules %}
-<div class="section-title">Configured Tax Rules / कर नियम</div>
+<div class="section-title">Configured Tax Rules / à¤à¤° à¤¨à¤¿à¤¯à¤®</div>
 <table class="small">
     <thead>
     <tr class="shade">
@@ -970,7 +1064,7 @@ th {
 
 <div class="title-box">
     <div class="title">FORM NO. 16 - PART A</div>
-    <div class="subtitle">Certificate under Section 203 — Summary of amount paid/credited and tax deducted at source</div>
+    <div class="subtitle">Certificate under Section 203 â Summary of amount paid/credited and tax deducted at source</div>
 </div>
 
 <table>
@@ -1281,28 +1375,28 @@ th {
 
 <div class="title-box">
     <div class="title">
-        वित्तीय वर्ष {{ config.financial_year }} में वेतन स्रोत से आय और कटौतियों की विवरणी
+        à¤µà¤¿à¤¤à¥à¤¤à¥à¤¯ à¤µà¤°à¥à¤· {{ config.financial_year }} à¤®à¥à¤ à¤µà¥à¤¤à¤¨ à¤¸à¥à¤°à¥à¤¤ à¤¸à¥ à¤à¤¯ à¤à¤° à¤à¤à¥à¤¤à¤¿à¤¯à¥à¤ à¤à¥ à¤µà¤¿à¤µà¤°à¤£à¥
     </div>
     <div class="subtitle">
-        नाम: {{ data.name }} |
-        पदनाम: {{ data.designation }} |
-        कार्यालय: {{ data.office_name }}
+        à¤¨à¤¾à¤®: {{ data.name }} |
+        à¤ªà¤¦à¤¨à¤¾à¤®: {{ data.designation }} |
+        à¤à¤¾à¤°à¥à¤¯à¤¾à¤²à¤¯: {{ data.office_name }}
     </div>
 </div>
 
 <table class="ledger">
     <thead>
     <tr class="shade">
-        <th class="month-col">क्र.सं. / माह विवरण</th>
-        <th class="num-col">मूल वेतन<br>(Basic)</th>
-        <th class="num-col">महंगाई भत्ता<br>(DA)</th>
-        <th class="num-col">मकान किराया<br>(HRA)</th>
-        <th class="num-col">चिकित्सा<br>(Med)</th>
-        <th class="num-col">कुल योग<br>(Gross)</th>
+        <th class="month-col">à¤à¥à¤°.à¤¸à¤. / à¤®à¤¾à¤¹ à¤µà¤¿à¤µà¤°à¤£</th>
+        <th class="num-col">à¤®à¥à¤² à¤µà¥à¤¤à¤¨<br>(Basic)</th>
+        <th class="num-col">à¤®à¤¹à¤à¤à¤¾à¤ à¤­à¤¤à¥à¤¤à¤¾<br>(DA)</th>
+        <th class="num-col">à¤®à¤à¤¾à¤¨ à¤à¤¿à¤°à¤¾à¤¯à¤¾<br>(HRA)</th>
+        <th class="num-col">à¤à¤¿à¤à¤¿à¤¤à¥à¤¸à¤¾<br>(Med)</th>
+        <th class="num-col">à¤à¥à¤² à¤¯à¥à¤<br>(Gross)</th>
         <th class="num-col">GPF</th>
         <th class="num-col">P.Tax</th>
         <th class="num-col">TDS</th>
-        <th class="num-col">शुद्ध वेतन<br>(Net)</th>
+        <th class="num-col">à¤¶à¥à¤¦à¥à¤§ à¤µà¥à¤¤à¤¨<br>(Net)</th>
     </tr>
     </thead>
 
@@ -1330,7 +1424,7 @@ th {
     {% endif %}
 
     <tr class="total">
-        <td>कुल योग (GRAND TOTAL)</td>
+        <td>à¤à¥à¤² à¤¯à¥à¤ (GRAND TOTAL)</td>
         <td class="right">{{ money(totals.basic) }}</td>
         <td class="right">{{ money(totals.da) }}</td>
         <td class="right">{{ money(totals.hra) }}</td>
@@ -1403,7 +1497,9 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
         year_info.setdefault("warnings", [])
         year_info["warnings"] = list(dict.fromkeys(year_info.get("warnings", []) + period_warnings))
         year_info["requires_manual_confirmation"] = bool(year_info.get("warnings"))
-        if period_warnings and config.get("strict_period_validation", True):
+        year_info = config.get("year_info") or {}
+        inferred_from_ledger = year_info.get("source") == "monthly_entries"
+        if period_warnings and config.get("strict_period_validation", True) and not inferred_from_ledger:
             raise ValueError(
                 "Salary ledger period does not match the selected financial year. "
                 + " | ".join(period_warnings[:5])
