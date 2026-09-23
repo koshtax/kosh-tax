@@ -792,15 +792,16 @@ HTML_TEMPLATE = r"""
 
 @font-face {
     font-family: "NotoSansDevanagariLocal";
-    src: url("{{ regular_font_url }}") format("truetype");
+    src: url("data:font/truetype;charset=utf-8;base64,{{ regular_font_b64 }}") format("truetype");
     font-weight: 400;
 }
 
 @font-face {
     font-family: "NotoSansDevanagariLocal";
-    src: url("{{ bold_font_url }}") format("truetype");
+    src: url("data:font/truetype;charset=utf-8;base64,{{ bold_font_b64 }}") format("truetype");
     font-weight: 700;
 }
+
 
 * { box-sizing: border-box; }
 
@@ -1618,6 +1619,17 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
     book_adjustment_rows = data.get("book_adjustment_rows") or []
     challan_rows = data.get("challan_rows") or []
 
+        # Font files ko Base64 mein convert karein
+    import base64
+    try:
+        with open(MODULE_DIR / "fonts" / "NotoSansDevanagari-Regular.ttf", "rb") as f:
+            reg_b64 = base64.b64encode(f.read()).decode("utf-8")
+        with open(MODULE_DIR / "fonts" / "NotoSansDevanagari-Bold.ttf", "rb") as f:
+            bold_b64 = base64.b64encode(f.read()).decode("utf-8")
+    except Exception:
+        reg_b64 = ""
+        bold_b64 = ""
+
     template = Template(HTML_TEMPLATE)
 
     html_content = template.render(
@@ -1629,6 +1641,11 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
         totals=totals,
         quarters=quarters,
 
+        # Yeh 2 naye Base64 variables
+        regular_font_b64=reg_b64,
+        bold_font_b64=bold_b64,
+
+        # Yahan se saare purane variables intact hain (KUCH REMOVE NAHI HUA)
         basic=totals["basic"],
         da=totals["da"],
         hra=totals["hra"],
@@ -1669,6 +1686,7 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
         footer_text="DEVELOPED & DESIGNED BY @ NITIN MALLICK" if is_trial else "",
         money=_fmt,
     )
+
 
     # WeasyPrint performs the actual pagination. The CSS above deliberately
     # uses A4 portrait + named A4 landscape pages, repeated table headers,
