@@ -185,8 +185,8 @@ def generate_form16_pdf(data, is_trial=False):
 </html>
 """
 
-        template = Template(html_template)
-        html_content = template.render(
+    template = Template(html_template)
+    html_content = template.render(
         data=data,
         gross=gross,
         basic=basic,
