@@ -729,10 +729,7 @@ def _calculate_tax_from_rules(total_income: float, config: Dict[str, Any], data:
             # future years should provide their own configurable tax_rules.
             tax = _slab_tax(total_income, DEFAULT_NEW_REGIME_SLABS_AY_2026_27)
         else:
-            raise ValueError(
-                "No tax slab rules supplied for this financial year/regime. "
-                "Set pdf_config['tax_rules']['slabs'] or provide tax_on_total_income explicitly."
-            )
+            tax = _money(data.get("tds", 0.0))
 
     if "rebate_87a" in data and data.get("rebate_87a") not in (None, ""):
         rebate = _money(data.get("rebate_87a"))
