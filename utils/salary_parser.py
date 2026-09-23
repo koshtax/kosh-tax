@@ -3,7 +3,7 @@ import re
 
 def parse_salary_slip(file):
     """
-    Strict Audited Multi-Block Parser: Extracts exact values from slips without forced defaults.
+    Fully Restored & Audited Multi-Block Parser with 7th CPC Validation & Month Extraction.
     """
     extracted = {
         'name': '', 'pan': '', 'designation': '',
@@ -101,7 +101,6 @@ def parse_salary_slip(file):
             gl_val = get_b_val([r"GLI", r"GIS", r"बीमा"])
 
             if b_val > 0:
-                # Strictly calculate based on what is found in the slip block
                 c_gross = b_val + d_val + h_val + m_val
                 c_ded = g_val + t_val + gl_val
                 
@@ -113,7 +112,7 @@ def parse_salary_slip(file):
                     'medical': m_val,
                     'gross': c_gross,
                     'gpf': g_val,
-                    'ptax': t_val if t_val < 500 else 0.0, # Professional tax safeguard
+                    'ptax': t_val if t_val < 500 else 0.0,
                     'tds': t_val if t_val >= 500 else 0.0,
                     'gli': gl_val,
                     'net': c_gross - c_ded
@@ -137,10 +136,13 @@ def parse_salary_slip(file):
             extracted['hra'] = latest_record['hra']
             extracted['medical'] = latest_record['medical']
             extracted['gross'] = sum(r['gross'] for r in monthly_records)
-            extracted['gpf'] = sum(r['gpf'] for r in monthly_records)
-            extracted['ptax'] = sum(r['ptax'] for r in monthly_records)
-            extracted['tds'] = sum(r['tds'] for r in monthly_records)
-            extracted['gli'] = sum(r['gli'] for r in monthly_records)
+            
+            # Yahan sum hata kar latest_record ka exact single month deduction set kar diya gaya hai
+            extracted['gpf'] = latest_record['gpf']
+            extracted['ptax'] = latest_record['ptax']
+            extracted['tds'] = latest_record['tds']
+            extracted['gli'] = latest_record['gli']
+            
             extracted['net_income'] = sum(r['net'] for r in monthly_records)
             extracted['monthly_entries'] = monthly_records
 
@@ -148,3 +150,4 @@ def parse_salary_slip(file):
         print(f"Error in strict salary parser: {e}")
 
     return extracted
+
