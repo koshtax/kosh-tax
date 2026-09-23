@@ -176,7 +176,7 @@ def show_review():
                 ["NEW REGIME", "OLD REGIME"]
             )
 
-        submitted = st.form_submit_button("Next: Payment →", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("Next: Payment →", type="primary", use_container_width=True, key="form_next_payment_btn")
 
         if submitted:
             # Save to session
@@ -202,14 +202,7 @@ def show_review():
                 'tax_regime': tax_regime
             }
 
-    if st.button("Next: Payment →"):
-        st.session_state.current_page = 'payment'
-        st.rerun()
-
-    if st.button("← Back"):
-        go_upload()
-
-
+    
 def show_payment():
     st.title("💰 STEP 3: PAYMENT")
     mode = st.session_state.get('mode', 'paid')
