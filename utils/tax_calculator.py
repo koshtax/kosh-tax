@@ -1,9 +1,11 @@
-def calculate_tax(income, regime="NEW REGIME"):
-    """
-    Calculate tax based on regime
-    """
+def calculate_tax(user_data):
+    income = float(user_data.get('gross', 0))
+    regime = user_data.get('tax_regime', 'NEW REGIME')
+
     if regime == "NEW REGIME":
         std_deduction = 75000
+# ... baki ka code same rahega ...
+
         taxable = max(0, income - std_deduction)
 
         if taxable <= 400000:
