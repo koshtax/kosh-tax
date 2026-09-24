@@ -984,7 +984,7 @@ HTML_TEMPLATE = r"""
         <tr>
             <td width="50%" style="height: 80px; vertical-align: top;">
                 <b>Name and address of the Employer</b><br><br>
-                {{ config.employer_address or data.office_name }}
+                {{ data.employer_address }}
             </td>
             <td width="50%" style="height: 80px; vertical-align: top;">
                 <b>Name and address of the Employee</b><br><br>
@@ -1086,19 +1086,19 @@ HTML_TEMPLATE = r"""
     <div style="border: 1px solid #000; padding: 10px; margin-top: 10px;">
         <div class="center bold" style="font-size: 14px;">Verification</div>
         <p style="margin-top: 5px; text-align: justify;">
-            I, <b>{{ data.ddo_officer or '.............................................' }}</b> son/daughter of <b>{{ data.ddo_fathers or '.............................................' }}</b> working in the capacity of <b>{{ data.ddo_capacity or 'DISBURSING & DRAWING OFFICER' }}</b> do hereby certify that a sum of <b>Rs. {{ money(tds) }}</b> has been deducted and deposited to the credit of the Central Government. I further certify that the information given above is true, complete and correct.
+            I, <b>{{ data.ddo_officer or '.............................................' }}</b> son/daughter of <b>{{ data.ddo_father or '.............................................' }}</b> working in the capacity of <b>{{ data.ddo_capacity or 'DISBURSING & DRAWING OFFICER' }}</b> do hereby certify that a sum of <b>Rs. {{ money(tds) }}</b> has been deducted and deposited to the credit of the Central Government. I further certify that the information given above is true, complete and correct.
         </p>
         <br>
         <div style="display: flex; justify-content: space-between;">
             <div>
-                <b>Place:</b> {{ '...........................' }}<br>
+                <b>Place:</b> {{ 'data.district' }}<br>
                 <b>Date:</b> {{ today }}<br>
                 <b>Designation:</b> {{ 'DISBURSING & DRAWING OFFICER' }}
             </div>
             <div class="right">
                 _______________________________________<br>
                 (Signature of person responsible for deduction of tax)<br>
-                <b>Full Name: {{ data.ddo_officer }}</b>b
+                <b>Full Name: {{ data.ddo_officer }}</b>
             </div>
         </div>
     </div>
@@ -1208,12 +1208,12 @@ HTML_TEMPLATE = r"""
     <div style="border: 1px solid #000; padding: 10px; margin-top: 10px;">
         <div class="center bold" style="font-size: 14px;">Verification</div>
         <p style="margin-top: 5px; text-align: justify;">
-            I, <b>{{ data.ddo_officer }}</b> son/daughter of <b>{{ data.ddo_fathers or '.............................................' }}</b> working in the capacity of <b>{{ 'DISBURSING & DRAWING OFFICER' }}</b> do hereby certify that the information given above is true, complete and correct.
+            I, <b>{{ data.ddo_officer }}</b> son/daughter of <b>{{ data.ddo_father or '.............................................' }}</b> working in the capacity of <b>{{ 'DISBURSING & DRAWING OFFICER' }}</b> do hereby certify that the information given above is true, complete and correct.
         </p>
         <br>
         <div style="display: flex; justify-content: space-between;">
             <div>
-                <b>Place:</b> {{ config.place }}<br>
+                <b>Place:</b> {{ data.district }}<br>
                 <b>Date:</b> {{ today }}<br>
                 <b>Designation:</b> {{ 'DISBURSING & DRAWING OFFICER' }}
             </div>
