@@ -784,7 +784,34 @@ HTML_TEMPLATE = r"""
         size: A4 landscape;
         margin: 8mm;
     }
-    
+
+        /* =========================================
+       SHRINK SETTINGS (Sirf Page 1 ke liye) 
+       ========================================= */
+    .page-1 {
+        font-size: 10px; 
+        line-height: 1.15;
+        padding: 5px;
+    }
+    .page-1 table {
+        margin-top: 4px;
+        margin-bottom: 6px;
+    }
+    .page-1 th, .page-1 td {
+        padding: 2px 4px;
+    }
+    .page-1 .title-header {
+        font-size: 15px;
+        margin-bottom: 3px;
+    }
+    .page-1 .sub-header {
+        font-size: 11px;
+        margin-bottom: 5px;
+    }
+    .page-1 th {
+        font-size: 11px;
+    }
+  
     * { box-sizing: border-box; }
     
     body {
@@ -866,7 +893,7 @@ HTML_TEMPLATE = r"""
 <!-- ========================================== -->
 <!-- PAGE 1: NTR (नई/पुरानी कर व्यवस्था)       -->
 <!-- ========================================== -->
-<div class="page">
+<div class="page page-1">
     <div class="center">
         <div class="title-header">Schedule of Income-Tax (आयकर की अनुसूची)</div>
         <div class="bold" style="font-size: 14px;">{{ "नई कर व्यवस्था के तहत" if tax_regime == "new" else "पुरानी कर व्यवस्था के तहत" }}</div>
@@ -1015,7 +1042,7 @@ HTML_TEMPLATE = r"""
     </table>
 
     
-        <div style="margin-top: 10px;"></div>
+        <div style="margin-top: 8px;"></div>
     <table class="no-border">
         <tr>
             <td class="left">
