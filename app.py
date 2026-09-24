@@ -481,10 +481,53 @@ def show_download_pdf():
     is_trial = st.session_state.mode == 'trial'
     is_whitelisted = user_data['pan'] in st.session_state.whitelisted_pans
 
-    if st.session_state.payment_status == 'pending':
+        if st.session_state.payment_status == 'pending':
         st.subheader("💳 Secure Payment Required")
         st.info("Your PAN is not whitelisted. Please complete the payment to generate a clean PDF.")
-        st.markdown("**Note: Enter exact 12-digit UPI UTR / Reference Number.**")
+        st.markdown("**Note: Enter exact 12-digit UPI UTR...")
+        
+        # ==========================================
+        # YAHAN SE NAYA QR CODE WALA BLOCK ADD KAREIN
+        # ==========================================
+        col_qr, col_info = st.columns([1, 2])
+        with col_qr:
+            upi_choice = st.radio(
+                "Select Payment Gateway:", 
+                ["UPI Option 1 (PhonePe/SBI)", "UPI Option 2 (Paytm/HDFC)"]
+            )
+            
+            if upi_choice == "UPI Option 1 (PhonePe/SBI)":
+                upi_id = "aapka_pehla_upi@bank"        # Apna primary UPI ID dalein
+                payee_name = "Nitin Mallick"
+            else:
+                upi_id = "aapka_dusra_upi@bank"        # Apna secondary UPI ID dalein
+                payee_name = "Nitin Mallick"
+            
+            upi_url = f"upi://pay?pa={upi_id}&pn={payee_name}&cu=INR"
+            
+            qr = qrcode.make(upi_url)
+            img_buffer = BytesIO()
+            qr.save(img_buffer, format="PNG")
+            
+            st.image(img_buffer, caption=f"Scan to Pay: {upi_id}", width=200)
+                
+        with col_info:
+            st.markdown("### Payment Instructions:")
+            st.markdown("1. Select your preferred Payment Gateway from the left.")
+            st.markdown("2. Open PhonePe, Google Pay, or Paytm and scan the generated QR code.")
+            st.markdown("3. After successful payment, copy the **12-Digit UTR / Transaction ID**.")
+            st.markdown("4. Paste it below to unlock your PDF.")
+        # ==========================================
+        # YAHAN TAK NAYA CODE HAI
+        # ==========================================
+
+        # Yahan se aapka purana UTR wala code continue hoga jo screenshot mein hai:
+        utr_input = st.text_input("Enter 12-Digit UTR / ...")
+        
+        if st.button("Submit UTR for Verification"):
+            utr_cleaned = utr_input.strip()
+            # ... baaki ka aapka purana code ...
+
         
         utr_input = st.text_input("Enter 12-Digit UTR / Transaction Number", max_chars=12)
         
