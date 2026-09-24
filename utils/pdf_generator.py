@@ -757,187 +757,104 @@ def _merge_config(data: Dict[str, Any]) -> Dict[str, Any]:
     return cfg
 
 
-# ---------------------------------------------------------------------------
-# HTML template
-# ---------------------------------------------------------------------------
-
 HTML_TEMPLATE = r"""
 <!doctype html>
-<html>
+<html lang="hi">
 <head>
 <meta charset="utf-8">
-
+<title>Tax Documents - Form 16 & Calculation</title>
 <style>
-@page {
-    size: A4 portrait;
-    margin: 7mm 7mm 8mm 7mm;
+    /* Base64 Fonts for Streamlit Cloud Fix */
+    @font-face {
+        font-family: "NotoSansDevanagariLocal";
+        src: url("data:font/truetype;charset=utf-8;base64,{{ regular_font_b64 }}") format("truetype");
+        font-weight: 400;
+    }
+    @font-face {
+        font-family: "NotoSansDevanagariLocal";
+        src: url("data:font/truetype;charset=utf-8;base64,{{ bold_font_b64 }}") format("truetype");
+        font-weight: 700;
+    }
 
-    @bottom-center {
-        content: "{{ footer_text }}";
-        font-size: 7.5pt;
+    /* Print Layout Settings */
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+    @page landscape_page {
+        size: A4 landscape;
+        margin: 8mm;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+        font-family: "NotoSansDevanagariLocal", Arial, sans-serif;
+        color: #000;
+        font-size: 11px;
+        line-height: 1.3;
+        margin: 0;
+        padding: 0;
+    }
+
+    .page {
+        width: 100%;
+        page-break-after: always;
+        padding: 10px;
+    }
+    
+    .landscape {
+        page: landscape_page;
+        width: 100%;
+        page-break-after: always;
+        padding: 10px;
+    }
+
+    h1, h2, h3, p { margin: 0; padding: 0; }
+    
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .left { text-align: left; }
+    .bold { font-weight: bold; }
+    
+    /* Table Styles */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        margin-bottom: 15px;
+    }
+    th, td {
+        border: 1px solid #000;
+        padding: 4px 6px;
+        vertical-align: middle;
+        word-wrap: break-word;
+    }
+    th {
+        background-color: #f2f2f2;
+        text-align: center;
         font-weight: bold;
     }
-}
-
-@page landscape {
-    size: A4 landscape;
-    margin: 6mm 6mm 7mm 6mm;
-
-    @bottom-center {
-        content: "{{ footer_text }}";
-        font-size: 7.5pt;
+    
+    .title-header {
+        font-size: 16px;
         font-weight: bold;
+        text-decoration: underline;
+        margin-bottom: 5px;
     }
-}
-
-@font-face {
-    font-family: "NotoSansDevanagariLocal";
-    src: url("data:font/truetype;charset=utf-8;base64,{{ regular_font_b64 }}") format("truetype");
-    font-weight: 400;
-}
-
-@font-face {
-    font-family: "NotoSansDevanagariLocal";
-    src: url("data:font/truetype;charset=utf-8;base64,{{ bold_font_b64 }}") format("truetype");
-    font-weight: 700;
-}
-
-
-* { box-sizing: border-box; }
-
-html, body {
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    font-family: "NotoSansDevanagariLocal", "Noto Sans Devanagari", "Noto Sans", "DejaVu Sans",
-                 Arial, Helvetica, sans-serif;
-    color: #000;
-    font-size: 7.4pt;
-    line-height: 1.15;
-}
-
-.page {
-    width: 100%;
-}
-
-.landscape-page {
-    page: landscape;
-    page-break-before: always;
-}
-
-.page-break {
-    break-after: page;
-    page-break-after: always;
-}
-
-.keep {
-    break-inside: avoid;
-    page-break-inside: avoid;
-}
-
-h1, h2, h3, p { margin: 0; padding: 0; }
-
-.title-box {
-    border: 1.2pt solid #000;
-    padding: 4pt 5pt;
-    margin-bottom: 4pt;
-    text-align: center;
-    break-inside: avoid;
-}
-
-.title {
-    font-size: 10pt;
-    font-weight: 700;
-}
-
-.subtitle {
-    font-size: 7.5pt;
-    margin-top: 2pt;
-}
-
-.section-title {
-    font-weight: 700;
-    font-size: 8pt;
-    margin: 4pt 0 2pt;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    margin: 2.5pt 0 4pt;
-}
-
-thead { display: table-header-group; }
-tfoot { display: table-footer-group; }
-
-tr {
-    break-inside: avoid;
-    page-break-inside: avoid;
-}
-
-th, td {
-    border: 0.55pt solid #000;
-    padding: 2.4pt 3pt;
-    vertical-align: middle;
-    overflow-wrap: anywhere;
-    word-break: normal;
-}
-
-th {
-    font-weight: 700;
-    text-align: center;
-}
-
-.shade { background: #eeeeee; }
-.total { font-weight: 700; background: #e5e5e5; }
-
-.left { text-align: left; }
-.center { text-align: center; }
-.right { text-align: right; }
-.bold { font-weight: 700; }
-
-.small { font-size: 6.7pt; }
-.tiny { font-size: 6pt; }
-
-.no-border td {
-    border: 0;
-}
-
-.signature-row {
-    margin-top: 10pt;
-}
-
-.watermark {
-    position: fixed;
-    top: 42%;
-    left: 32%;
-    transform: rotate(-42deg);
-    font-size: 48pt;
-    color: rgba(220, 0, 0, 0.09);
-    z-index: -1;
-}
-
-.auto-fit {
-    max-width: 100%;
-}
-
-.ledger {
-    font-size: 6.8pt;
-}
-
-.ledger th, .ledger td {
-    padding: 2pt 2.4pt;
-}
-
-.ledger .month-col { width: 17%; }
-.ledger .num-col { width: 9.22%; }
-
-@media print {
-    .page-break { break-after: page; }
-}
+    .sub-header {
+        font-size: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .no-border td { border: none; }
+    
+    .calc-table th { font-size: 10px; padding: 2px; }
+    .calc-table td { font-size: 11px; padding: 5px 3px; text-align: center; }
+    .calc-table .month-col { text-align: left; font-weight: bold; }
+    .calc-table .money { text-align: right; }
+    
+    .watermark { position: fixed; top: 42%; left: 32%; transform: rotate(-42deg); font-size: 48pt; color: rgba(220, 0, 0, 0.09); z-index: -1; }
 </style>
 </head>
 
@@ -947,513 +864,469 @@ th {
 <div class="watermark">TRIAL COPY</div>
 {% endif %}
 
-<!-- ============================================================= -->
-<!-- PAGE 1: SCHEDULE OF INCOME TAX                               -->
-<!-- ============================================================= -->
+<!-- ========================================== -->
+<!-- PAGE 1: NTR (नई/पुरानी कर व्यवस्था)       -->
+<!-- ========================================== -->
 <div class="page">
+    <div class="center">
+        <div class="title-header">Schedule of Income-Tax (आयकर की अनुसूची)</div>
+        <div class="bold" style="font-size: 14px;">{{ "नई कर व्यवस्था के तहत" if tax_regime == "new" else "पुरानी कर व्यवस्था के तहत" }}</div>
+        <div class="sub-header">(चार प्रतियों में भर कर दें)<br>वित्तीय वर्ष {{ config.financial_year }} (कर निर्धारण वर्ष {% if config.assessment_year %}{{ config.assessment_year }}{% else %}{{ config.tax_year }}{% endif %})</div>
+    </div>
 
-<div class="title-box">
-    <div class="title">{{ "नई कर व्यवस्था" if tax_regime == "new" else "पुरानी कर व्यवस्था" }} - SCHEDULE OF INCOME - TAX (आयकर की अनुसूची)</div>
-    <div class="subtitle">
-        (चार प्रतियों में भर कर दें) |
-        वित्तीय वर्ष {{ config.financial_year }}
-        {% if config.tax_year %}
-            (कर वर्ष {{ config.tax_year }})
-        {% elif config.assessment_year %}
-            (कर निर्धारण वर्ष {{ config.assessment_year }})
-        {% endif %}
+    <table style="border:none;">
+        <tr class="no-border">
+            <td width="15%"><b>करदाता का नाम:</b></td>
+            <td width="35%" class="bold" style="border-bottom: 1px dotted #000;">{{ data.name }}</td>
+            <td width="15%"><b>पदनाम:</b></td>
+            <td width="35%" class="bold" style="border-bottom: 1px dotted #000;">{{ data.designation }}</td>
+        </tr>
+        <tr class="no-border">
+            <td><b>कार्यालय/विद्यालय:</b></td>
+            <td colspan="3" class="bold" style="border-bottom: 1px dotted #000;">{{ data.office_name }}</td>
+        </tr>
+        <tr class="no-border">
+            <td><b>PAN:</b></td>
+            <td class="bold" style="border-bottom: 1px dotted #000;">{{ data.pan }}</td>
+            <td><b>कोषागार:</b></td>
+            <td class="bold" style="border-bottom: 1px dotted #000;">{{ config.place }}</td>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <th colspan="2" class="left" style="font-size: 13px;">(क) वेतन स्रोत से प्राप्त आय का विवरण</th>
+        </tr>
+        <tr>
+            <td width="80%">1. वेतन :- (दिनांक {{ data.period_from or "-" }} से {{ data.period_to or "-" }} तक)</td>
+            <td width="20%" class="right">{{ money(basic) }}/-</td>
+        </tr>
+        <tr><td>2. महँगाई भत्ता (DA) :-</td><td class="right">{{ money(da) }}/-</td></tr>
+        <tr><td>3. मकान किराया भत्ता (HRA) :-</td><td class="right">{{ money(hra) }}/-</td></tr>
+        <tr><td>4. चिकित्सा भत्ता (Medical Allowance) :-</td><td class="right">{{ money(medical) }}/-</td></tr>
+        <tr><td>5. परिवहन भत्ता :-</td><td class="right">0.00/-</td></tr>
+        <tr><td>6. परिवहन भत्ता पर महँगाई भत्ता :-</td><td class="right">0.00/-</td></tr>
+        <tr><td>7. विशेष वेतन/बोनस/मानदेय/नर्सिंग भत्ता :-</td><td class="right">0.00/-</td></tr>
+        <tr><td>8. महँगाई भत्ता की बकाया राशि (Arrear) :-</td><td class="right">{{ money(arrear_gross) }}/-</td></tr>
+        <tr><td>9. बकाया वेतन एवं भत्ते की राशि :-</td><td class="right">0.00/-</td></tr>
+        <tr>
+            <td class="bold">10. वेतन स्रोत से प्राप्त कुल आय (Gross Income):</td>
+            <td class="right bold">{{ money(gross) }}/-</td>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <th colspan="2" class="left" style="font-size: 13px;">(ख) आयकर की संगणना</th>
+        </tr>
+        <tr>
+            <td width="80%">1. वेतन स्रोत से प्राप्त कुल आय</td>
+            <td width="20%" class="right">{{ money(gross) }}/-</td>
+        </tr>
+        <tr>
+            <td>2. घटायें- धारा 16(ia) के अन्तर्गत मानक कटौती (Standard Deduction) की राशि Rs. {{ money(standard_deduction) }}/-</td>
+            <td class="right">- {{ money(standard_deduction) }}/-</td>
+        </tr>
+        <tr>
+            <td class="bold">3. सकल कुल आय (Gross Total Income)</td>
+            <td class="right bold">{{ money(taxable_before_chapter) }}/-</td>
+        </tr>
+        <tr><td>4. जोड़ें - अन्य स्रोतों से आय</td><td class="right">{{ money(other_income) }}</td></tr>
+        <tr><td>5. जोड़ें - मकान सम्पत्ति से आय</td><td class="right">0.00</td></tr>
+        <tr><td>6. जोड़ें - बैंक/डाकघर में बचत खातों पर ब्याज इत्यादि से प्राप्त राशि</td><td class="right">0.00</td></tr>
+        <tr>
+            <td class="bold">7. कर योग्य आय (Taxable Income)</td>
+            <td class="right bold">{{ money(total_income) }}/-</td>
+        </tr>
+        <tr>
+            <td>8. Rs. {{ money(total_income) }} पर देय आयकर (Tax Computation):<br>
+                <span class="small" style="color: #444;">(Calculated as per configured slabs)</span>
+            </td>
+            <td class="right" style="vertical-align: bottom;">{{ money(tax_on_total_income) }}</td>
+        </tr>
+        <tr>
+            <td class="bold">9. छूट (Rebate u/s 87A)</td>
+            <td class="right bold">- {{ money(rebate) }}</td>
+        </tr>
+        <tr>
+            <td class="bold">10. शुद्ध देय आयकर (Net Tax Payable)</td>
+            <td class="right bold">{{ money(tax_after_rebate) }}</td>
+        </tr>
+        <tr>
+            <td>11. शिक्षा एवं स्वास्थ्य उपकर (Cess 4%)</td>
+            <td class="right">{{ money(cess) }}</td>
+        </tr>
+        <tr>
+            <td class="bold">12. कुल आयकर एवं शिक्षा उपकर का भुगतान</td>
+            <td class="right bold">{{ money(net_tax_payable) }}</td>
+        </tr>
+    </table>
+
+    <br><br><br>
+    <table class="no-border">
+        <tr>
+            <td class="left"><b>करदाता का हस्ताक्षर:</b> ____________________<br><br><b>दिनांक:</b> {{ today }}</td>
+            <td class="right"><b>निकासी एवं व्ययन पदाधिकारी (DDO) का हस्ताक्षर एवं मुहर:</b><br><br>____________________</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ========================================== -->
+<!-- PAGE 2: FORM 16 PART A                     -->
+<!-- ========================================== -->
+<div class="page">
+    <div class="center">
+        <h2 style="margin-bottom: 5px;">FORM NO. 16</h2>
+        <h3 style="margin-bottom: 10px;">PART A</h3>
+        <p>Certificate under section 203 of the Income-tax Act, 1961 for tax deducted at source on salary</p>
+    </div>
+
+    <table>
+        <tr>
+            <td width="50%" style="height: 80px; vertical-align: top;">
+                <b>Name and address of the Employer</b><br><br>
+                {{ config.employer_address or data.office_name }}
+            </td>
+            <td width="50%" style="height: 80px; vertical-align: top;">
+                <b>Name and address of the Employee</b><br><br>
+                {{ data.name }}<br>
+                {{ data.office_name }}
+            </td>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td width="25%"><b>PAN of the Deductor</b><br>{{ config.tan }}</td>
+            <td width="25%"><b>TAN of the Deductor</b><br>{{ config.tan }}</td>
+            <td width="25%"><b>PAN of the Employee</b><br>{{ data.pan }}</td>
+            <td width="25%"><b>Employee Reference No.</b><br>{{ data.employee_reference_no or "-" }}</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <b>Assessment Year:</b> {% if config.assessment_year %}{{ config.assessment_year }}{% else %}{{ config.tax_year }}{% endif %}
+            </td>
+            <td colspan="2">
+                <b>Period with the Employer:</b><br>From: {{ data.period_from or "-" }} &nbsp;&nbsp;&nbsp; To: {{ data.period_to or "-" }}
+            </td>
+        </tr>
+    </table>
+
+    <div class="bold" style="margin-top: 10px; margin-bottom: 5px;">Summary of amount paid/credited and tax deducted at source thereon in respect of the employee</div>
+    <table>
+        <tr>
+            <th>Quarter(s)</th>
+            <th>Receipt Numbers of original quarterly statements of TDS</th>
+            <th>Amount paid/credited (Rs.)</th>
+            <th>Amount of tax deducted (Rs.)</th>
+            <th>Amount of tax deposited/remitted (Rs.)</th>
+        </tr>
+        {% for qname in ["Q1","Q2","Q3","Q4"] %}
+        <tr>
+            <td class="center">Quarter {{ loop.index }} ({{ qname }})</td>
+            <td class="center">{{ quarter_receipts.get(qname, "-") }}</td>
+            <td class="right">{{ money(quarters[qname].gross) }}</td>
+            <td class="right">{{ money(quarters[qname].tds) }}</td>
+            <td class="right">{{ money(quarters[qname].tds) }}</td>
+        </tr>
+        {% endfor %}
+        <tr><td class="bold center">Total (Rs.)</td><td class="center">-</td><td class="right bold">{{ money(gross) }}</td><td class="right bold">{{ money(tds) }}</td><td class="right bold">{{ money(tds) }}</td></tr>
+    </table>
+
+    <div class="bold" style="margin-top: 10px; margin-bottom: 5px;">I. DETAILS OF TAX DEDUCTED AND DEPOSITED IN THE CENTRAL GOVERNMENT ACCOUNT THROUGH BOOK ADJUSTMENT</div>
+    <table>
+        <tr>
+            <th>Sl. No.</th>
+            <th>Tax Deposited in respect of the deductee (Rs)</th>
+            <th>Receipt number of Form No. 24G</th>
+            <th>DDO serial number in Form No. 24G</th>
+            <th>Date of transfer voucher (dd/mm/yyyy)</th>
+            <th>Status of matching with Form No. 24G</th>
+        </tr>
+        {% for row in book_adjustment_rows %}
+        <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td class="right">{{ money(row.tax_deposited) }}</td>
+            <td class="center">{{ row.bin }}</td>
+            <td class="center">{{ row.ddo_serial }}</td>
+            <td class="center">{{ row.date }}</td>
+            <td class="center">{{ row.status }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="center">No book-adjustment entries supplied</td></tr>
+        {% endfor %}
+        <tr><td colspan="6" class="center bold">Total (Rs.) &nbsp; {{ money(tds) }}</td></tr>
+    </table>
+    
+    <div class="bold" style="margin-top: 10px; margin-bottom: 5px;">II. DETAILS OF TAX DEDUCTED AND DEPOSITED IN THE CENTRAL GOVERNMENT ACCOUNT THROUGH CHALLAN</div>
+    <table>
+        <tr>
+            <th>Sl. No.</th>
+            <th>Tax Deposited in respect of the deductee (Rs)</th>
+            <th>BSR Code of the Bank Branch</th>
+            <th>Date on which tax deposited</th>
+            <th>Challan Serial Number</th>
+            <th>Status of matching with OLTAS</th>
+        </tr>
+        {% for row in challan_rows %}
+        <tr>
+            <td class="center">{{ loop.index }}</td>
+            <td class="right">{{ money(row.tax_deposited) }}</td>
+            <td class="center">{{ row.bin }}</td>
+            <td class="center">{{ row.date }}</td>
+            <td class="center">{{ row.serial_no }}</td>
+            <td class="center">{{ row.status }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="center">No challan entries supplied</td></tr>
+        {% endfor %}
+        <tr><td colspan="6" class="center bold">Total (Rs.) &nbsp; 0.00</td></tr>
+    </table>
+
+    <div style="border: 1px solid #000; padding: 10px; margin-top: 10px;">
+        <div class="center bold" style="font-size: 14px;">Verification</div>
+        <p style="margin-top: 5px; text-align: justify;">
+            I, <b>{{ data.name }}</b> son/daughter of <b>{{ data.fathers_name or '.............................................' }}</b> working in the capacity of <b>{{ config.employer_designation or data.designation }}</b> do hereby certify that a sum of <b>Rs. {{ money(tds) }}</b> has been deducted and deposited to the credit of the Central Government. I further certify that the information given above is true, complete and correct.
+        </p>
+        <br>
+        <div style="display: flex; justify-content: space-between;">
+            <div>
+                <b>Place:</b> {{ config.place }}<br>
+                <b>Date:</b> {{ today }}<br>
+                <b>Designation:</b> {{ config.employer_designation or data.designation }}
+            </div>
+            <div class="right">
+                _______________________________________<br>
+                (Signature of person responsible for deduction of tax)<br>
+                <b>Full Name: {{ config.employer_name or '........................................' }}</b>
+            </div>
+        </div>
     </div>
 </div>
 
-<table class="auto-fit">
-    <tbody>
-    <tr>
-        <td colspan="2">
-            <b>करदाता का नाम / Name:</b> {{ data.name }}<br>
-            <b>पदनाम / Designation:</b> {{ data.designation }}<br>
-            <b>कार्यालय/विद्यालय का नाम / Office:</b> {{ data.office_name }}<br>
-            <b>स्थायी लेखा संख्या (PAN):</b> {{ data.pan }}
-        </td>
-    </tr>
-    <tr>
-        <td style="width:75%">
-            <b>क. वेतन स्रोत से प्राप्त आय का विवरण :-</b><br>
-            01. वेतन<br>
-            02. महँगाई भत्ता (DA)<br>
-            03. मकान किराया भत्ता (HRA)<br>
-            04. चिकित्सा भत्ता (Medical Allowance)<br>
-            05. परिवहन भत्ता / अन्य भत्ते<br>
-            06. बकाया वेतन एवं भत्ते की राशि (Arrears / Bakaya Vetan)<br>
-            <b>07. वेतन स्रोत से प्राप्त कुल आय (Gross Total Income)</b>
-        </td>
-        <td style="width:25%" class="right">
-            <br>
-            Rs. {{ money(basic) }}<br>
-            Rs. {{ money(da) }}<br>
-            Rs. {{ money(hra) }}<br>
-            Rs. {{ money(medical) }}<br>
-            Rs. 0.00<br>
-            Rs. {{ money(arrear_gross) }}<br>
-            <b>Rs. {{ money(gross) }}</b>
-        </td>
-    </tr>
-    </tbody>
-</table>
-
-<table class="auto-fit">
-    <tbody>
-    <tr>
-        <td style="width:75%">
-            <b>ख. आयकर की संगणना (Tax Computation):-</b><br>
-            01. वेतन स्रोत से प्राप्त कुल आय<br>
-            02. घटायें - धारा 16(ia) के अन्तर्गत मानक कटौती (Standard Deduction)<br>
-            03. सकल कुल आय (Gross Total Income)<br>
-            04. कर योग्य आय (Taxable Income)<br>
-            05. देय आयकर (Tax on Total Income)<br>
-            06. घटायें - धारा 87A के तहत कर में राहत (Rebate)<br>
-            07. शिक्षा उपकर / Cess<br>
-            <b>08. शुद्ध देय आयकर (Net Tax Payable)</b>
-        </td>
-        <td style="width:25%" class="right">
-            <br>
-            Rs. {{ money(gross) }}<br>
-            Rs. {{ money(standard_deduction) }}<br>
-            Rs. {{ money(taxable_before_chapter) }}<br>
-            Rs. {{ money(taxable_income) }}<br>
-            Rs. {{ money(tax_on_total_income) }}<br>
-            Rs. {{ money(rebate) }}<br>
-            Rs. {{ money(cess) }}<br>
-            <b>Rs. {{ money(net_tax_payable) }}</b>
-        </td>
-    </tr>
-    </tbody>
-</table>
-
-{% if config.tax_rules %}
-<div class="section-title">Configured Tax Rules / कर नियम</div>
-<table class="small">
-    <thead>
-    <tr class="shade">
-        <th>Sl.</th><th>Rule / Slab</th><th>Rate / Value</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for rule in tax_rules %}
-    <tr>
-        <td class="center">{{ loop.index }}</td>
-        <td>{{ rule.label }}</td>
-        <td class="right">{{ rule.value }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-{% endif %}
-
-</div>
-
-<div class="page-break"></div>
-
-<!-- ============================================================= -->
-<!-- PAGE 2: FORM 16 PART A                                       -->
-<!-- ============================================================= -->
+<!-- ========================================== -->
+<!-- PAGE 3: FORM 16 PART B                     -->
+<!-- ========================================== -->
 <div class="page">
+    <div class="center">
+        <h3 style="margin-bottom: 10px;">PART B (ANNEXURE)</h3>
+        <p class="bold">Details of Salary paid and any other income and tax deducted</p>
+    </div>
 
-<div class="title-box">
-    <div class="title">FORM NO. 16 - PART A</div>
-    <div class="subtitle">Certificate under Section 203 — Summary of amount paid/credited and tax deducted at source</div>
+    <table>
+        <tr>
+            <td width="70%"><b>1. Gross Salary</b><br>(a) Salary as per provisions contained in section 17(1)</td>
+            <td width="30%" class="right">Rs. {{ money(gross) }}</td>
+        </tr>
+        <tr>
+            <td>(b) Value of perquisites under section 17(2)</td>
+            <td class="right">Rs. 0.00</td>
+        </tr>
+        <tr>
+            <td>(c) Profits in lieu of salary under section 17(3)</td>
+            <td class="right">Rs. 0.00</td>
+        </tr>
+        <tr>
+            <td class="bold right">(d) Total</td>
+            <td class="right bold">Rs. {{ money(gross) }}</td>
+        </tr>
+        <tr>
+            <td><b>2. Less: Allowances to the extent exempt under section 10</b><br>(e) House rent allowance under section 10(13A) / Travel concession etc.</td>
+            <td class="right"><br>Rs. 0.00</td>
+        </tr>
+        <tr>
+            <td class="bold right">3. Balance (1-2)</td>
+            <td class="right bold">Rs. {{ money(gross) }}</td>
+        </tr>
+        <tr>
+            <td><b>4. Deductions under section 16</b><br>(a) Standard deduction under section 16(ia)</td>
+            <td class="right"><br>Rs. {{ money(standard_deduction) }}</td>
+        </tr>
+        <tr>
+            <td>(b) Tax on employment (Professional Tax) under section 16(iii)</td>
+            <td class="right">Rs. {{ money(ptax) }}</td>
+        </tr>
+        <tr>
+            <td class="bold right">5. Total amount of deductions under section 16 (4a+4b)</td>
+            <td class="right bold">Rs. {{ money(standard_deduction + ptax) }}</td>
+        </tr>
+        <tr>
+            <td class="bold right">6. Income chargeable under the head "Salaries" (3-5)</td>
+            <td class="right bold">Rs. {{ money(salary_income) }}</td>
+        </tr>
+        <tr>
+            <td><b>7. Add: Any other income reported by the employee</b></td>
+            <td class="right">Rs. {{ money(other_income) }}</td>
+        </tr>
+        <tr>
+            <td class="bold right">8. Gross Total Income (6+7)</td>
+            <td class="right bold">Rs. {{ money(gross_total_income) }}</td>
+        </tr>
+    </table>
+
+    <table style="margin-top: 15px;">
+        <tr>
+            <td width="70%"><b>9. Deductions under Chapter VI-A</b> (80C, 80D, 80G etc.)<br><i>*Specify sections if applicable</i></td>
+            <td width="30%" class="right"></td>
+        </tr>
+        {% for row in deductions %}
+        <tr>
+            <td style="padding-left: 20px;">- {{ row.section }}</td>
+            <td class="right">Rs. {{ money(row.deductible) }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td class="bold right">10. Total Deductions under Chapter VI-A</td>
+            <td class="right bold">Rs. {{ money(chapter_via_total) }}</td>
+        </tr>
+        <tr>
+            <td class="bold right">11. Total Taxable Income (8-10)</td>
+            <td class="right bold">Rs. {{ money(total_income) }}</td>
+        </tr>
+        <tr>
+            <td class="bold right">12. Tax on total income</td>
+            <td class="right bold">Rs. {{ money(tax_on_total_income) }}</td>
+        </tr>
+        <tr>
+            <td>13. Rebate under section 87A, if applicable</td>
+            <td class="right">Rs. {{ money(rebate) }}</td>
+        </tr>
+        <tr>
+            <td class="bold right">14. Tax payable after Rebate</td>
+            <td class="right bold">Rs. {{ money(tax_after_rebate) }}</td>
+        </tr>
+        <tr>
+            <td>15. Health and education cess @4%</td>
+            <td class="right">Rs. {{ money(cess) }}</td>
+        </tr>
+        <tr>
+            <td class="bold right">16. Net Tax payable (14+15)</td>
+            <td class="right bold">Rs. {{ money(net_tax_payable) }}</td>
+        </tr>
+    </table>
+    
+    <div style="border: 1px solid #000; padding: 10px; margin-top: 10px;">
+        <div class="center bold" style="font-size: 14px;">Verification</div>
+        <p style="margin-top: 5px; text-align: justify;">
+            I, <b>{{ data.name }}</b> son/daughter of <b>{{ data.fathers_name or '.............................................' }}</b> working in the capacity of <b>{{ config.employer_designation or data.designation }}</b> do hereby certify that the information given above is true, complete and correct.
+        </p>
+        <br>
+        <div style="display: flex; justify-content: space-between;">
+            <div>
+                <b>Place:</b> {{ config.place }}<br>
+                <b>Date:</b> {{ today }}<br>
+                <b>Designation:</b> {{ config.employer_designation or data.designation }}
+            </div>
+            <div class="right">
+                _______________________________________<br>
+                (Signature of person responsible for deduction of tax)
+            </div>
+        </div>
+    </div>
 </div>
 
-<table>
-    <tbody>
-    <tr>
-        <td style="width:50%">
-            <b>Name and address of the Employer</b><br>
-            {{ config.employer_address or data.office_name }}
-        </td>
-        <td style="width:50%">
-            <b>Name and address of the Employee</b><br>
-            {{ data.name }}<br>
-            {{ data.office_name }}
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <b>PAN of the Deductor:</b> {{ config.tan }}
-        </td>
-        <td>
-            <b>PAN of the Employee:</b> {{ data.pan }}
-        </td>
-    </tr>
-    <tr>
-        <td>
-            {% if config.assessment_year %}
-                <b>Assessment Year:</b> {{ config.assessment_year }}
-            {% else %}
-                <b>Tax Year:</b> {{ config.tax_year }}
+<!-- ========================================== -->
+<!-- PAGE 4: CALCULATION SHEET (LANDSCAPE)      -->
+<!-- ========================================== -->
+<div class="landscape">
+    <div class="center" style="margin-bottom: 10px;">
+        <h2 style="font-size: 18px; text-decoration: underline;">वित्तीय वर्ष {{ config.financial_year }} में वेतन स्रोत से आय और कटौतियों की विवरणी</h2>
+        <p style="font-size: 14px; margin-top: 5px;">
+            <b>नाम:</b> {{ data.name }} &nbsp;&nbsp;|&nbsp;&nbsp;
+            <b>पदनाम:</b> {{ data.designation }} &nbsp;&nbsp;|&nbsp;&nbsp;
+            <b>कार्यालय/विद्यालय का नाम:</b> {{ data.office_name }}
+        </p>
+    </div>
+
+    <table class="calc-table">
+        <thead>
+            <tr>
+                <th rowspan="2" width="10%">माह एवं वर्ष</th>
+                <th colspan="7">आय (Income)</th>
+                <th rowspan="2" width="7%">आय का कुल योग<br>(Gross)</th>
+                <th colspan="4">कटौतियाँ (Deductions)</th>
+                <th rowspan="2" width="6%">कटौतियों का योग<br>(Total Ded)</th>
+                <th rowspan="2" width="7%">शुद्ध आय<br>(Net Pay)</th>
+                <th rowspan="2" width="5%">आयकर<br>(Tax)</th>
+            </tr>
+            <tr>
+                <th width="6%">मूल वेतन<br>(Basic)</th>
+                <th width="6%">महंगाई भत्ता<br>(DA)</th>
+                <th width="6%">मकान किराया<br>(HRA)</th>
+                <th width="5%">चिकित्सा भत्ता<br>(Med)</th>
+                <th width="5%">शहरी परिवहन<br>(City TA)</th>
+                <th width="5%">परिवहन पर DA</th>
+                <th width="5%">अन्य भत्ता</th>
+                
+                <th width="6%">प०नि०/C.P.F.<br>अंशदान</th>
+                <th width="5%">ग्रुप-बीमा<br>अंशदान</th>
+                <th width="5%">पेशाकर<br>(PTax)</th>
+                <th width="5%">गृह नि०अ०<br>वसूली</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in monthly_entries %}
+            <tr>
+                <td class="month-col">{{ entry.month_name }}{% if entry.is_arrear %} (Arrear){% endif %}</td>
+                <td>{{ money(entry.basic) }}</td>
+                <td>{{ money(entry.da) }}</td>
+                <td>{{ money(entry.hra) }}</td>
+                <td>{{ money(entry.medical) }}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td class="bold">{{ money(entry.gross) }}</td>
+                <td>{{ money(entry.gpf) }}</td>
+                <td>-</td>
+                <td>{{ money(entry.ptax) }}</td>
+                <td>-</td>
+                <td class="bold">{{ money(entry.gpf + entry.ptax) }}</td>
+                <td class="bold">{{ money(entry.net) }}</td>
+                <td>{{ money(entry.tds) }}</td>
+            </tr>
+            {% endfor %}
+            
+            {% if not monthly_entries %}
+            <tr><td colspan="16" class="center">No monthly ledger entries supplied.</td></tr>
             {% endif %}
-        </td>
-        <td><b>Employee Reference No.:</b> {{ data.employee_reference_no or "-" }}</td>
-    </tr>
-    <tr>
-        <td><b>Period with Employer:</b> {{ data.period_from or "-" }} to {{ data.period_to or "-" }}</td>
-        <td><b>Designation:</b> {{ data.designation }}</td>
-    </tr>
-    </tbody>
-</table>
 
-<div class="section-title">Quarter-wise Summary of Tax Deducted and Deposited</div>
-
-<table>
-    <thead>
-    <tr class="shade">
-        <th style="width:15%">Quarter</th>
-        <th style="width:24%">Receipt Numbers</th>
-        <th style="width:20%">Amount Paid/Credited (Rs.)</th>
-        <th style="width:20%">Tax Deducted (Rs.)</th>
-        <th style="width:21%">Tax Deposited (Rs.)</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for qname in ["Q1","Q2","Q3","Q4"] %}
-    <tr>
-        <td class="center">Quarter {{ loop.index }} ({{ qname }})</td>
-        <td class="center">{{ quarter_receipts.get(qname, "-") }}</td>
-        <td class="right">{{ money(quarters[qname].gross) }}</td>
-        <td class="right">{{ money(quarters[qname].tds) }}</td>
-        <td class="right">{{ money(quarters[qname].tds) }}</td>
-    </tr>
-    {% endfor %}
-    <tr class="total">
-        <td>Total (Rs.)</td>
-        <td class="center">-</td>
-        <td class="right">{{ money(gross) }}</td>
-        <td class="right">{{ money(tds) }}</td>
-        <td class="right">{{ money(tds) }}</td>
-    </tr>
-    </tbody>
-</table>
-
-<div class="section-title">I. Details of Tax Deducted and Deposited through Book Adjustment</div>
-<table class="small">
-    <thead>
-    <tr class="shade">
-        <th>BIN / 24G No.</th>
-        <th>DDO Serial No.</th>
-        <th>Date of Transfer Voucher</th>
-        <th>Amount of Tax Deducted (Rs.)</th>
-        <th>Amount of Tax Deposited (Rs.)</th>
-        <th>Status</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for row in book_adjustment_rows %}
-    <tr>
-        <td>{{ row.bin }}</td>
-        <td>{{ row.ddo_serial }}</td>
-        <td>{{ row.date }}</td>
-        <td class="right">{{ money(row.tax_deducted) }}</td>
-        <td class="right">{{ money(row.tax_deposited) }}</td>
-        <td>{{ row.status }}</td>
-    </tr>
-    {% else %}
-    <tr><td colspan="6" class="center">No book-adjustment entries supplied</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
-
-<div class="section-title">II. Details of Tax Deducted and Deposited through Challan</div>
-<table class="small">
-    <thead>
-    <tr class="shade">
-        <th>BIN</th>
-        <th>Transfer Voucher / Challan Serial No.</th>
-        <th>Date</th>
-        <th>Amount of Tax Deposited (Rs.)</th>
-        <th>Matching Status</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for row in challan_rows %}
-    <tr>
-        <td>{{ row.bin }}</td>
-        <td>{{ row.serial_no }}</td>
-        <td>{{ row.date }}</td>
-        <td class="right">{{ money(row.tax_deposited) }}</td>
-        <td>{{ row.status }}</td>
-    </tr>
-    {% else %}
-    <tr><td colspan="5" class="center">No challan entries supplied</td></tr>
-    {% endfor %}
-    </tbody>
-</table>
-
-<table>
-    <tbody>
-    <tr>
-        <td style="width:50%">
-            <b>Verification</b><br>
-            I {{ data.name }} certify that the information given above is true,
-            complete and correct to the best of the information supplied.
-        </td>
-        <td style="width:50%">
-            <b>Amount of tax deducted:</b> Rs. {{ money(tds) }}<br>
-            <b>Amount of tax deposited:</b> Rs. {{ money(tds) }}<br>
-            <b>Place:</b> {{ config.place }}<br>
-            <b>Date:</b> {{ today }}
-        </td>
-    </tr>
-    </tbody>
-</table>
-
-</div>
-
-<div class="page-break"></div>
-
-<!-- ============================================================= -->
-<!-- PAGE 3: FORM 16 PART B                                       -->
-<!-- ============================================================= -->
-<div class="page">
-
-<div class="title-box">
-    <div class="title">FORM NO. 16 - PART B (ANNEXURE)</div>
-    <div class="subtitle">Details of Salary Paid and Any Other Income and Tax Deduction</div>
-</div>
-
-<table>
-    <tbody>
-    <tr>
-        <td style="width:75%">
-            <b>1. GROSS SALARY</b><br>
-            (A) Salary as per provisions contained in sec. 17(1)<br>
-            (B) Value of perquisites u/s 17(2)<br>
-            (C) Profits in lieu of salary u/s 17(3)<br>
-            (D) TOTAL
-        </td>
-        <td style="width:25%" class="right">
-            <br>
-            Rs. {{ money(gross) }}<br>
-            Rs. 0.00<br>
-            Rs. 0.00<br>
-            <b>Rs. {{ money(gross) }}</b>
-        </td>
-    </tr>
-    <tr>
-        <td>2. LESS: Allowance to the extent exempt u/s 10</td>
-        <td class="right">Rs. 0.00</td>
-    </tr>
-    <tr>
-        <td>3. BALANCE (1 - 2)</td>
-        <td class="right"><b>Rs. {{ money(gross) }}</b></td>
-    </tr>
-    <tr>
-        <td>4(a). Standard Deduction</td>
-        <td class="right">Rs. {{ money(standard_deduction) }}</td>
-    </tr>
-    <tr>
-        <td>4(b). Tax on Employment</td>
-        <td class="right">Rs. {{ money(ptax) }}</td>
-    </tr>
-    <tr>
-        <td>5. AGGREGATE OF 4(a) AND 4(b)</td>
-        <td class="right"><b>Rs. {{ money(standard_deduction + ptax) }}</b></td>
-    </tr>
-    <tr>
-        <td>6. INCOME CHARGEABLE UNDER THE HEAD SALARY (3 - 5)</td>
-        <td class="right"><b>Rs. {{ money(salary_income) }}</b></td>
-    </tr>
-    <tr>
-        <td>7. ADD: ANY OTHER INCOME REPORTED BY THE EMPLOYEE</td>
-        <td class="right">Rs. {{ money(other_income) }}</td>
-    </tr>
-    <tr>
-        <td>8. GROSS TOTAL INCOME (6 + 7)</td>
-        <td class="right"><b>Rs. {{ money(gross_total_income) }}</b></td>
-    </tr>
-    </tbody>
-</table>
-
-<div class="section-title">9. DEDUCTIONS UNDER CHAPTER VI-A</div>
-
-<table class="small">
-    <thead>
-    <tr class="shade">
-        <th style="width:39%">Section / Particular</th>
-        <th style="width:20%">Gross Amount (Rs.)</th>
-        <th style="width:20%">Qualifying Amount (Rs.)</th>
-        <th style="width:21%">Deductible Amount (Rs.)</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for row in deductions %}
-    <tr>
-        <td><b>{{ row.section }}</b></td>
-        <td class="right">{{ money(row.gross) }}</td>
-        <td class="right">{{ money(row.qualifying) }}</td>
-        <td class="right">{{ money(row.deductible) }}</td>
-    </tr>
-    {% endfor %}
-    <tr class="total">
-        <td>Total deductible amount under Chapter VI-A</td>
-        <td></td>
-        <td></td>
-        <td class="right">Rs. {{ money(chapter_via_total) }}</td>
-    </tr>
-    </tbody>
-</table>
-
-<table>
-    <tbody>
-    <tr>
-        <td style="width:75%">10. AGGREGATE OF DEDUCTIBLE AMOUNT UNDER CHAPTER VI-A</td>
-        <td style="width:25%" class="right">Rs. {{ money(chapter_via_total) }}</td>
-    </tr>
-    <tr>
-        <td>11. TOTAL INCOME (8 - 10)</td>
-        <td class="right"><b>Rs. {{ money(total_income) }}</b></td>
-    </tr>
-    <tr>
-        <td>12. TAX ON TOTAL INCOME</td>
-        <td class="right">Rs. {{ money(tax_on_total_income) }}</td>
-    </tr>
-    <tr>
-        <td>13. LESS: REBATE UNDER SECTION 87A</td>
-        <td class="right">Rs. {{ money(rebate) }}</td>
-    </tr>
-    <tr>
-        <td>14. TOTAL TAX PAYABLE (12 - 13)</td>
-        <td class="right"><b>Rs. {{ money(tax_after_rebate) }}</b></td>
-    </tr>
-    <tr>
-        <td>15. EDUCATION CESS / HEALTH & EDUCATION CESS</td>
-        <td class="right">Rs. {{ money(cess) }}</td>
-    </tr>
-    <tr>
-        <td>16. TAX PAYABLE (14 + 15)</td>
-        <td class="right"><b>Rs. {{ money(tax_after_cess) }}</b></td>
-    </tr>
-    <tr>
-        <td>17. LESS: RELIEF UNDER SECTION 89</td>
-        <td class="right">Rs. {{ money(relief_89) }}</td>
-    </tr>
-    <tr>
-        <td>18. TAX PAYABLE (16 - 17)</td>
-        <td class="right"><b>Rs. {{ money(net_tax_payable) }}</b></td>
-    </tr>
-    </tbody>
-</table>
-
-<div class="small">
-    <b>Note:</b> Deduction limits and tax treatment are taken from the supplied
-    <code>pdf_config</code>/input rules. This generator does not independently certify
-    statutory correctness for a particular assessment year.
-</div>
-
-<table class="no-border signature-row">
-    <tbody>
-    <tr>
-        <td style="width:50%; height:35pt">Place: {{ config.place }}<br>Date: {{ today }}</td>
-        <td style="width:50%; text-align:right; height:35pt">
-            Signature of person responsible for deduction of tax<br>
-            Working in the capacity of {{ config.employer_designation or data.designation }}
-        </td>
-    </tr>
-    </tbody>
-</table>
-
-</div>
-
-<div class="page-break"></div>
-
-<!-- ============================================================= -->
-<!-- PAGE 4+: DYNAMIC SALARY & ARREARS LEDGER                    -->
-<!-- ============================================================= -->
-<div class="landscape-page">
-
-<div class="title-box">
-    <div class="title">
-        वित्तीय वर्ष {{ config.financial_year }} में वेतन स्रोत से आय और कटौतियों की विवरणी
+            <tr style="background-color: #e6e6e6; font-weight: bold; height: 30px;">
+                <td class="month-col">कुल योग</td>
+                <td>{{ money(totals.basic) }}</td>
+                <td>{{ money(totals.da) }}</td>
+                <td>{{ money(totals.hra) }}</td>
+                <td>{{ money(totals.medical) }}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>{{ money(totals.gross) }}</td>
+                <td>{{ money(totals.gpf) }}</td>
+                <td>-</td>
+                <td>{{ money(totals.ptax) }}</td>
+                <td>-</td>
+                <td>{{ money(totals.gpf + totals.ptax) }}</td>
+                <td>{{ money(totals.net) }}</td>
+                <td>{{ money(totals.tds) }}</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 30px; display: flex; justify-content: space-between;">
+        <div style="width: 30%; text-align: center;">
+            ___________________________<br><br>
+            <b>हस्ताक्षर लिपिक</b>
+        </div>
+        <div style="width: 30%; text-align: center;">
+            ___________________________<br><br>
+            <b>हस्ताक्षर निकासी एवं व्ययन पदाधिकारी</b><br>(मुहर सहित)
+        </div>
     </div>
-    <div class="subtitle">
-        नाम: {{ data.name }} |
-        पदनाम: {{ data.designation }} |
-        कार्यालय: {{ data.office_name }}
-    </div>
-</div>
-
-<table class="ledger">
-    <thead>
-    <tr class="shade">
-        <th class="month-col">क्र.सं. / माह विवरण</th>
-        <th class="num-col">मूल वेतन<br>(Basic)</th>
-        <th class="num-col">महंगाई भत्ता<br>(DA)</th>
-        <th class="num-col">मकान किराया<br>(HRA)</th>
-        <th class="num-col">चिकित्सा<br>(Med)</th>
-        <th class="num-col">कुल योग<br>(Gross)</th>
-        <th class="num-col">GPF</th>
-        <th class="num-col">P.Tax</th>
-        <th class="num-col">TDS</th>
-        <th class="num-col">शुद्ध वेतन<br>(Net)</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    {% for entry in monthly_entries %}
-    <tr>
-        <td>
-            <b>{{ loop.index }}. {{ entry.month_name }}</b>
-            {% if entry.is_arrear %}<br><span class="small">(Arrear)</span>{% endif %}
-        </td>
-        <td class="right">{{ money(entry.basic) }}</td>
-        <td class="right">{{ money(entry.da) }}</td>
-        <td class="right">{{ money(entry.hra) }}</td>
-        <td class="right">{{ money(entry.medical) }}</td>
-        <td class="right bold">{{ money(entry.gross) }}</td>
-        <td class="right">{{ money(entry.gpf) }}</td>
-        <td class="right">{{ money(entry.ptax) }}</td>
-        <td class="right">{{ money(entry.tds) }}</td>
-        <td class="right bold">{{ money(entry.net) }}</td>
-    </tr>
-    {% endfor %}
-
-    {% if not monthly_entries %}
-    <tr><td colspan="10" class="center">No monthly ledger entries supplied.</td></tr>
-    {% endif %}
-
-    <tr class="total">
-        <td>कुल योग (GRAND TOTAL)</td>
-        <td class="right">{{ money(totals.basic) }}</td>
-        <td class="right">{{ money(totals.da) }}</td>
-        <td class="right">{{ money(totals.hra) }}</td>
-        <td class="right">{{ money(totals.medical) }}</td>
-        <td class="right">{{ money(totals.gross) }}</td>
-        <td class="right">{{ money(totals.gpf) }}</td>
-        <td class="right">{{ money(totals.ptax) }}</td>
-        <td class="right">{{ money(totals.tds) }}</td>
-        <td class="right">{{ money(totals.net) }}</td>
-    </tr>
-    </tbody>
-</table>
-
-{% if totals.arrear_gross > 0 %}
-<table class="ledger">
-    <tbody>
-    <tr class="total">
-        <td style="width:50%">Arrear Gross Total</td>
-        <td style="width:50%" class="right">Rs. {{ money(totals.arrear_gross) }}</td>
-    </tr>
-    <tr>
-        <td>Arrear TDS</td>
-        <td class="right">Rs. {{ money(totals.arrear_tds) }}</td>
-    </tr>
-    </tbody>
-</table>
-{% endif %}
-
 </div>
 
 </body>
 </html>
 """
+
 
 
 
