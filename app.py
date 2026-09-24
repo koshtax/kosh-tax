@@ -483,7 +483,7 @@ def show_download_pdf():
     is_trial = st.session_state.mode == 'trial'
     is_whitelisted = user_data['pan'] in st.session_state.whitelisted_pans
 
- if st.session_state.payment_status == 'pending':
+if st.session_state.payment_status == 'pending':
     st.subheader("💳 Secure Payment Required")
     st.info("Your PAN is not whitelisted. Please complete the payment to generate a clean PDF.")
     st.markdown("**Note: Enter exact 12-digit UPI UTR...")
