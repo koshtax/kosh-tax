@@ -994,10 +994,10 @@ HTML_TEMPLATE = r"""
         </tr>
     </table>
 
-    <table>
+        <table>
         <tr>
-            <td width="25%"><b>PAN of the Deductor</b><br>{{ config.tan }}</td>
-            <td width="25%"><b>TAN of the Deductor</b><br>{{ config.tan }}</td>
+            <td width="25%"><b>PAN of the Deductor</b><br>{{ data.ddo_tan or '......................' }}</td>
+            <td width="25%"><b>TAN of the Deductor</b><br>{{ data.ddo_tan or '......................' }}</td>
             <td width="25%"><b>PAN of the Employee</b><br>{{ data.pan }}</td>
             <td width="25%"><b>Employee Reference No.</b><br>{{ data.employee_reference_no or "-" }}</td>
         </tr>
@@ -1010,6 +1010,7 @@ HTML_TEMPLATE = r"""
             </td>
         </tr>
     </table>
+
 
     <div class="bold" style="margin-top: 10px; margin-bottom: 5px;">Summary of amount paid/credited and tax deducted at source thereon in respect of the employee</div>
     <table>
