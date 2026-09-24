@@ -888,7 +888,7 @@ HTML_TEMPLATE = r"""
             <td><b>PAN:</b></td>
             <td class="bold" style="border-bottom: 1px dotted #000;">{{ data.pan }}</td>
             <td><b>कोषागार:</b></td>
-            <td class="bold" style="border-bottom: 1px dotted #000;">{{ config.place }}</td>
+            <td class="bold" style="border-bottom: 1px dotted #000;">{{ data.district }}</td>
         </tr>
     </table>
 
@@ -919,45 +919,98 @@ HTML_TEMPLATE = r"""
             <th colspan="2" class="left" style="font-size: 13px;">(ख) आयकर की संगणना</th>
         </tr>
         <tr>
-            <td width="80%">1. वेतन स्रोत से प्राप्त कुल आय</td>
+            <td width="80%">01. वेतन स्रोत से प्राप्त कुल आय</td>
             <td width="20%" class="right">{{ money(gross) }}/-</td>
         </tr>
         <tr>
-            <td>2. घटायें- धारा 16(ia) के अन्तर्गत मानक कटौती (Standard Deduction) की राशि Rs. {{ money(standard_deduction) }}/-</td>
+            <td>02. घटायें- धारा 16(ia) के अन्तर्गत मानक कटौती (Standard Deduction) की राशि Rs. {{ money(standard_deduction) }}/-</td>
             <td class="right">- {{ money(standard_deduction) }}/-</td>
         </tr>
         <tr>
-            <td class="bold">3. सकल कुल आय (Gross Total Income)</td>
+            <td class="bold">03. सकल कुल आय</td>
             <td class="right bold">{{ money(taxable_before_chapter) }}/-</td>
         </tr>
-        <tr><td>4. जोड़ें - अन्य स्रोतों से आय</td><td class="right">{{ money(other_income) }}</td></tr>
-        <tr><td>5. जोड़ें - मकान सम्पत्ति से आय</td><td class="right">0.00</td></tr>
-        <tr><td>6. जोड़ें - बैंक/डाकघर में बचत खातों पर ब्याज इत्यादि से प्राप्त राशि</td><td class="right">0.00</td></tr>
+        <tr><td>04. जोड़ें - अन्य स्रोतों से आय</td><td class="right">{{ money(other_income) | default('0.00') }}</td></tr>
+        <tr><td>05. जोड़ें - गृह सम्पत्ति से आय</td><td class="right">0.00</td></tr>
+        <tr><td>06. जोड़ें - बैंक/डाकघर में बचत खातों पर ब्याज इत्यादि से प्राप्त राशि</td><td class="right">0.00</td></tr>
+        <tr><td>07. जोड़ें - बैंक/डाकघर में FD/RD खातों पर ब्याज इत्यादि से प्राप्त राशि</td><td class="right">{{ money(fd_interest) | default('0.00') }}</td></tr>
         <tr>
-            <td class="bold">7. कर योग्य आय (Taxable Income)</td>
+            <td class="bold">08. सकल प्राप्त आय (Gross Total Income)</td>
             <td class="right bold">{{ money(total_income) }}/-</td>
         </tr>
         <tr>
-            <td>8. Rs. {{ money(total_income) }} पर देय आयकर (Tax Computation):<br>
-                <span class="small" style="color: #444;">(Calculated as per configured slabs)</span>
+            <td class="bold">09. कर योग्य आय (Rs. 10 के गुणक में परिवर्तित राशि)</td>
+            <td class="right bold">{{ money(rounded_total_income) | default(money(total_income)) }}/-</td>
+        </tr>
+        <tr>
+            <td style="padding: 0;">
+                <table style="border:none; margin:0; width:100%;">
+                    <tr class="no-border">
+                        <td colspan="2">10. रू0 {{ money(rounded_total_income) | default(money(total_income)) }} पर देय आयकर</td>
+                    </tr>
+                    <tr class="no-border">
+                        <td width="70%" style="padding-left: 20px;">(i) प्रथम Rs. 3,00,000 ---------- पर</td>
+                        <td width="30%" class="right">शून्य</td>
+                    </tr>
+                    <tr class="no-border">
+                        <td style="padding-left: 20px;">(ii) अगला Rs. 3,00,000 ---------- का @ 5%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 3,00,001 से Rs. 7,00,000 तक)</span></td>
+                        <td class="right">= Rs. {{ money(tax_slab_5) | default('0.00') }}</td>
+                    </tr>
+                    <tr class="no-border">
+                        <td style="padding-left: 20px;">(iii) अगला Rs. 1,45,570 ---------- का @ 10%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 7,00,001 से Rs. 10,00,000 तक)</span></td>
+                        <td class="right">= Rs. {{ money(tax_slab_10) | default('0.00') }}</td>
+                    </tr>
+                    <tr class="no-border">
+                        <td style="padding-left: 20px;">(iv) अगला Rs. ................. ---------- का @ 15%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 10,00,001 से Rs. 12,00,000 तक)</span></td>
+                        <td class="right">= Rs. {{ money(tax_slab_15) | default('0.00') }}</td>
+                    </tr>
+                    <tr class="no-border">
+                        <td style="padding-left: 20px;">(v) अगला Rs. ................. ---------- का @ 20%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 12,00,001 से Rs. 15,00,000 तक)</span></td>
+                        <td class="right">= Rs. {{ money(tax_slab_20) | default('0.00') }}</td>
+                    </tr>
+                    <tr class="no-border">
+                        <td style="padding-left: 20px;">(vi) शेष Rs. ................. ---------- का @ 30%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 15,00,001 से अधिक राशि पर)</span></td>
+                        <td class="right">= Rs. {{ money(tax_slab_30) | default('0.00') }}</td>
+                    </tr>
+                    <tr class="no-border">
+                        <td class="right bold" style="padding-top: 10px;">योग TOTAL</td>
+                        <td class="right bold"></td>
+                    </tr>
+                </table>
             </td>
-            <td class="right" style="vertical-align: bottom;">{{ money(tax_on_total_income) }}</td>
+            <td class="right bold" style="vertical-align: bottom;">{{ money(tax_on_total_income) }}</td>
         </tr>
         <tr>
-            <td class="bold">9. छूट (Rebate u/s 87A)</td>
-            <td class="right bold">- {{ money(rebate) }}</td>
+            <td>11. घटायें-धारा 87A के तहत कर में राहत</td>
+            <td class="right">- {{ money(rebate) }}</td>
         </tr>
         <tr>
-            <td class="bold">10. शुद्ध देय आयकर (Net Tax Payable)</td>
+            <td class="bold">12. शुद्ध देय आयकर</td>
             <td class="right bold">{{ money(tax_after_rebate) }}</td>
         </tr>
         <tr>
-            <td>11. शिक्षा एवं स्वास्थ्य उपकर (Cess 4%)</td>
+            <td>13. जोड़ें- 4% (शिक्षा उपकर+सेकेण्ड्री एवं उच्च शिक्षा उपकर)</td>
             <td class="right">{{ money(cess) }}</td>
         </tr>
         <tr>
-            <td class="bold">12. कुल आयकर एवं शिक्षा उपकर का भुगतान</td>
+            <td class="bold">14. आयकर और शिक्षा उपकर + सेकेण्ड्री एवं उच्च शिक्षा उपकर का योग</td>
             <td class="right bold">{{ money(net_tax_payable) }}</td>
+        </tr>
+        <tr>
+            <td>15. घटायें-धारा 89(1) के अन्तर्गत बकाया राशि पर आयकर में छूट (गणना तालिका संलग्न)</td>
+            <td class="right">{{ money(relief_89) | default('0.00') }}</td>
+        </tr>
+        <tr>
+            <td>16. घटायें-प्रतिमाह वेतन से आयकर का भुगतान या अग्रिम कर का भुगतान</td>
+            <td class="right">{{ money(tds_deducted) | default('0.00') }}</td>
+        </tr>
+        <tr>
+            <td>17. घटायें-चालाना द्वारा जमा किया गया आयकर की राशि (चेक सं0 ___________ दिनांक ___________)</td>
+            <td class="right">{{ money(challan_tax) | default('0.00') }}</td>
+        </tr>
+        <tr>
+            <td class="bold">18. वित्तीय वर्ष {{ config.financial_year }} में आयकर और शिक्षा उपकर की भुगतेय राशि</td>
+            <td class="right bold">{{ money(balance_tax_payable) | default(money(net_tax_payable)) }}</td>
         </tr>
     </table>
 
