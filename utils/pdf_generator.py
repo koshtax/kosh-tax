@@ -790,8 +790,8 @@ HTML_TEMPLATE = r"""
     body {
         font-family: "NotoSansDevanagariLocal", Arial, sans-serif;
         color: #000;
-        font-size: 11px;
-        line-height: 1.3;
+        font-size: 10px;
+        line-height: 1.15;
         margin: 0;
         padding: 0;
     }
@@ -1014,13 +1014,21 @@ HTML_TEMPLATE = r"""
         </tr>
     </table>
 
-    <br><br><br>
+    
+        <div style="margin-top: 10px;"></div>
     <table class="no-border">
         <tr>
-            <td class="left"><b>करदाता का हस्ताक्षर:</b> ____________________<br><br><b>दिनांक:</b> {{ today }}</td>
-            <td class="right"><b>निकासी एवं व्ययन पदाधिकारी (DDO) का हस्ताक्षर एवं मुहर:</b><br><br>____________________</td>
+            <td class="left">
+                <b>करदाता का हस्ताक्षर:</b> ____________________<br>
+                <b>दिनांक:</b> {{ today }}
+            </td>
+            <td class="right">
+                <b>निकासी एवं व्ययन पदाधिकारी (DDO) का हस्ताक्षर एवं मुहर:</b><br>
+                ____________________
+            </td>
         </tr>
     </table>
+
 </div>
 
 <!-- ========================================== -->
