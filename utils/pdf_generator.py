@@ -930,23 +930,23 @@ HTML_TEMPLATE = r"""
             <td class="bold">03. सकल कुल आय</td>
             <td class="right bold">{{ money(taxable_before_chapter) }}/-</td>
         </tr>
-        <tr><td>04. जोड़ें - अन्य स्रोतों से आय</td><td class="right">{{ money(other_income) | default('0.00') }}</td></tr>
+        <tr><td>04. जोड़ें - अन्य स्रोतों से आय</td><td class="right">{{ money(other_income | default(0)) }}</td></tr>
         <tr><td>05. जोड़ें - गृह सम्पत्ति से आय</td><td class="right">0.00</td></tr>
         <tr><td>06. जोड़ें - बैंक/डाकघर में बचत खातों पर ब्याज इत्यादि से प्राप्त राशि</td><td class="right">0.00</td></tr>
-        <tr><td>07. जोड़ें - बैंक/डाकघर में FD/RD खातों पर ब्याज इत्यादि से प्राप्त राशि</td><td class="right">{{ money(fd_interest) | default('0.00') }}</td></tr>
+        <tr><td>07. जोड़ें - बैंक/डाकघर में FD/RD खातों पर ब्याज इत्यादि से प्राप्त राशि</td><td class="right">{{ money(fd_interest | default(0)) }}</td></tr>
         <tr>
             <td class="bold">08. सकल प्राप्त आय (Gross Total Income)</td>
             <td class="right bold">{{ money(total_income) }}/-</td>
         </tr>
         <tr>
             <td class="bold">09. कर योग्य आय (Rs. 10 के गुणक में परिवर्तित राशि)</td>
-            <td class="right bold">{{ money(rounded_total_income) | default(money(total_income)) }}/-</td>
+            <td class="right bold">{{ money(rounded_total_income | default (total_income)) }}/-</td>
         </tr>
         <tr>
             <td style="padding: 0;">
                 <table style="border:none; margin:0; width:100%;">
                     <tr class="no-border">
-                        <td colspan="2">10. रू0 {{ money(rounded_total_income) | default(money(total_income)) }} पर देय आयकर</td>
+                        <td colspan="2">10. रू0 {{ money(rounded_total_income | default (total_income)) }} पर देय आयकर</td>
                     </tr>
                     <tr class="no-border">
                         <td width="70%" style="padding-left: 20px;">(i) प्रथम Rs. 3,00,000 ---------- पर</td>
@@ -954,23 +954,23 @@ HTML_TEMPLATE = r"""
                     </tr>
                     <tr class="no-border">
                         <td style="padding-left: 20px;">(ii) अगला Rs. 3,00,000 ---------- का @ 5%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 3,00,001 से Rs. 7,00,000 तक)</span></td>
-                        <td class="right">= Rs. {{ money(tax_slab_5) | default('0.00') }}</td>
+                        <td class="right">= Rs. {{ money(tax_slab_5 | default (0)) }}</td>
                     </tr>
                     <tr class="no-border">
                         <td style="padding-left: 20px;">(iii) अगला Rs. 1,45,570 ---------- का @ 10%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 7,00,001 से Rs. 10,00,000 तक)</span></td>
-                        <td class="right">= Rs. {{ money(tax_slab_10) | default('0.00') }}</td>
+                        <td class="right">= Rs. {{ money(tax_slab_10 | default(0)) }}</td>
                     </tr>
                     <tr class="no-border">
                         <td style="padding-left: 20px;">(iv) अगला Rs. ................. ---------- का @ 15%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 10,00,001 से Rs. 12,00,000 तक)</span></td>
-                        <td class="right">= Rs. {{ money(tax_slab_15) | default('0.00') }}</td>
+                        <td class="right">= Rs. {{ money(tax_slab_15 | default(0)) }}</td>
                     </tr>
                     <tr class="no-border">
                         <td style="padding-left: 20px;">(v) अगला Rs. ................. ---------- का @ 20%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 12,00,001 से Rs. 15,00,000 तक)</span></td>
-                        <td class="right">= Rs. {{ money(tax_slab_20) | default('0.00') }}</td>
+                        <td class="right">= Rs. {{ money(tax_slab_20 | default(0)) }}</td>
                     </tr>
                     <tr class="no-border">
                         <td style="padding-left: 20px;">(vi) शेष Rs. ................. ---------- का @ 30%<br><span style="padding-left:15px; font-size:10px; color:#444;">(Rs. 15,00,001 से अधिक राशि पर)</span></td>
-                        <td class="right">= Rs. {{ money(tax_slab_30) | default('0.00') }}</td>
+                        <td class="right">= Rs. {{ money(tax_slab_30 | default(0)) }}</td>
                     </tr>
                     <tr class="no-border">
                         <td class="right bold" style="padding-top: 10px;">योग TOTAL</td>
