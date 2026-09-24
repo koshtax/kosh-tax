@@ -352,13 +352,39 @@ def show_admin_dashboard():
 
     with tab4:
         st.subheader("Manage Whitelisted PAN Numbers")
+        
+        # --- ADD TO WHITELIST ---
         new_pan = st.text_input("Add New PAN to Whitelist").upper()
         if st.button("Add to Whitelist") and re.match(PAN_REGEX, new_pan):
             with get_db_connection() as conn:
                 conn.cursor().execute("INSERT OR IGNORE INTO whitelist_pans (pan) VALUES (?)", (new_pan,))
                 conn.commit()
             st.session_state.whitelisted_pans.add(new_pan)
+            st.success(f"✅ {new_pan} added to Whitelist!")
             st.rerun()
+            
+        st.markdown("---")
+        
+        # --- DELETE FROM WHITELIST ---
+        st.subheader("Remove PAN from Whitelist")
+        # Ensure session state is updated
+        current_wl = list(st.session_state.whitelisted_pans)
+        
+        if current_wl:
+            pan_to_remove = st.selectbox("Select PAN to remove", ["-- Select PAN --"] + current_wl)
+            if st.button("❌ Remove from Whitelist"):
+                if pan_to_remove != "-- Select PAN --":
+                    with get_db_connection() as conn:
+                        conn.cursor().execute("DELETE FROM whitelist_pans WHERE pan=?", (pan_to_remove,))
+                        conn.commit()
+                    st.session_state.whitelisted_pans.discard(pan_to_remove)
+                    st.success(f"🗑️ {pan_to_remove} removed from Whitelist successfully!")
+                    st.rerun()
+                else:
+                    st.warning("Please select a PAN to remove.")
+        else:
+            st.info("Whitelist is currently empty.")
+
 
     if st.button("🚪 Logout Admin"):
         st.session_state.is_admin_logged = False
