@@ -556,7 +556,7 @@ if st.session_state.payment_status == 'pending':
             else:
                 st.error("❌ Invalid Format! UTR must be exactly 12 numeric digits.")
 
-    elif st.session_state.payment_status == 'awaiting_approval':
+  elif st.session_state.payment_status == 'awaiting_approval':
         st.subheader("⏳ Awaiting Admin Approval")
         st.warning("Your UTR has been submitted and is currently being verified by the admin.")
         
