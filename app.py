@@ -53,7 +53,27 @@ def init_db():
             c.execute('''CREATE TABLE IF NOT EXISTS whitelist_pans (
                 pan TEXT PRIMARY KEY
             )''')
+                    # --- NEW ADDITIONS FOR ADMIN SETTINGS & EMAIL ---
+            c.execute('''CREATE TABLE IF NOT EXISTS app_settings (
+                id INTEGER PRIMARY KEY, upi_id TEXT, payee_name TEXT, amount REAL,
+                sender_email TEXT, sender_password TEXT
+            )''')
             
+            c.execute("SELECT count(*) FROM app_settings")
+            if c.fetchone()[0] == 0:
+                c.execute("INSERT INTO app_settings (id, upi_id, payee_name, amount, sender_email, sender_password) VALUES (1, 'admin@upi', 'Kosh-Tax Admin', 150.0, '', '')")
+            
+            # Migration for old data (Alag-alag try-except zaroori h SQLite k liye)
+            try: c.execute("ALTER TABLE transaction_logs ADD COLUMN amount REAL DEFAULT 0.0")
+            except: pass
+            try: c.execute("ALTER TABLE transaction_logs ADD COLUMN email TEXT DEFAULT ''")
+            except: pass
+            try: c.execute("ALTER TABLE app_settings ADD COLUMN sender_email TEXT DEFAULT ''")
+            except: pass
+            try: c.execute("ALTER TABLE app_settings ADD COLUMN sender_password TEXT DEFAULT ''")
+            except: pass
+            # ------------------------------------------------
+
             c.execute("SELECT count(*) FROM whitelist_pans")
             if c.fetchone()[0] == 0:
                 c.executemany("INSERT INTO whitelist_pans (pan) VALUES (?)", [("OSYPK6572D",), ("ABCDE1234F",)])
@@ -62,6 +82,54 @@ def init_db():
         st.error(f"Database Initialization Error: {e}")
 
 init_db()
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
+
+def send_approval_email(receiver_email, user_name, pdf_file_path):
+    if not receiver_email or "@" not in receiver_email: return False
+
+    try:
+        with get_db_connection() as conn:
+            settings = conn.cursor().execute("SELECT sender_email, sender_password FROM app_settings WHERE id=1").fetchone()
+            if settings:
+                sender_email, sender_password = settings[0], settings[1]
+            else:
+                sender_email, sender_password = "", ""
+    except Exception:
+        sender_email, sender_password = "", ""
+
+    if not sender_email or not sender_password:
+        st.error("⚠️ Email dispatch failed: Admin has not configured the Sender Email in settings.")
+        return False
+
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = "✅ Your Form-16 is Approved & Ready!"
+    
+    body = f"Hello {user_name},\n\nAapka payment verify ho gaya hai. Aapka Form 16 PDF is email me attached hai.\n\nThank you for using Kosh-Tax System!"
+    msg.attach(MIMEText(body, 'plain'))
+    
+    try:
+        with open(pdf_file_path, "rb") as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(pdf_file_path)}")
+            msg.attach(part)
+            
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        st.error(f"Failed to send email: Please check your App Password or Email in Admin Settings.")
+        return False
 
 def load_whitelist():
     try:
@@ -156,102 +224,118 @@ def show_admin_dashboard():
         return
 
     st.title("🛠️ ADMIN CONTROL PANEL")
-    tab1, tab2, tab3 = st.tabs(["📊 UTR Approvals", "📋 Whitelist Management", "🗄️ Database Records & Backup"])
+    
+    try:
+        with get_db_connection() as conn:
+            c = conn.cursor()
+            tot_rev = c.execute("SELECT SUM(amount) FROM transaction_logs WHERE status='approved'").fetchone()[0] or 0.0
+            tot_purchasers = c.execute("SELECT COUNT(DISTINCT pan) FROM transaction_logs WHERE status='approved'").fetchone()[0] or 0
+            tot_wl = c.execute("SELECT COUNT(*) FROM whitelist_pans").fetchone()[0] or 0
+            active_wl = c.execute("SELECT COUNT(DISTINCT pan) FROM transaction_logs WHERE payment_type='Whitelist'").fetchone()[0] or 0
+            
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("💰 Total Revenue", f"₹{tot_rev:,.2f}")
+        m2.metric("👥 Total Purchasers", tot_purchasers)
+        m3.metric("📋 Whitelisted Users", tot_wl)
+        m4.metric("🔥 Active WL Users", active_wl)
+    except Exception as e:
+        st.error("Could not load metrics")
+    
+    st.markdown("---")
+    
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 UTR Approvals", "⚙️ App Settings", "🗄️ Detailed Ledger & Backup", "📋 Whitelist"])
 
     with tab1:
         st.subheader("Action Required: Pending UTRs")
         try:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-                pending_rows = cursor.execute("SELECT id, pan, name, utr, timestamp FROM transaction_logs WHERE status='pending'").fetchall()
+                pending_rows = cursor.execute("SELECT id, pan, name, utr, timestamp, amount, email FROM transaction_logs WHERE status='pending'").fetchall()
                 
                 if pending_rows:
                     for row in pending_rows:
                         with st.container():
                             col_info, col_app, col_rej = st.columns([4, 1, 1])
                             with col_info:
-                                st.write(f"**PAN:** {row[1]} | **Name:** {row[2]}")
-                                st.write(f"**UTR:** `{row[3]}` | **Date:** {row[4]}")
+                                st.write(f"**PAN:** {row[1]} | **Name:** {row[2]} | **Email:** {row[6]}")
+                                st.write(f"**UTR:** `{row[3]}` | **Amount Paid:** ₹{row[5]} | **Date:** {row[4]}")
                             with col_app:
-                                if st.button("✅ Approve", key=f"app_{row[0]}", type="primary"):
-                                    cursor.execute("UPDATE transaction_logs SET status='approved' WHERE id=?", (row[0],))
-                                    conn.commit()
-                                    st.success(f"Approved UTR for {row[1]}")
-                                    st.rerun()
+                                if st.button("✅ Approve & Email", key=f"app_{row[0]}", type="primary"):
+                                    pdf_path = f"temp_pdfs/{row[1]}_{row[3]}.pdf"
+                                    
+                                    if os.path.exists(pdf_path):
+                                        mail_sent = send_approval_email(row[6], row[2], pdf_path)
+                                        # Sirf email success hone par hi DB me approve mark karein
+                                        if mail_sent:
+                                            cursor.execute("UPDATE transaction_logs SET status='approved' WHERE id=?", (row[0],))
+                                            conn.commit()
+                                            os.remove(pdf_path) # Clean temp file
+                                            st.success(f"Approved! PDF sent to {row[6]}")
+                                            st.rerun()
+                                        else:
+                                            st.warning("Email fail ho gaya. Status abhi bhi Pending hai taaki aap fix karke dobara try kar sakein.")
+                                    else:
+                                        st.error("PDF file server par nahi mili. Approval aborted.")
                             with col_rej:
                                 if st.button("❌ Reject", key=f"rej_{row[0]}"):
                                     cursor.execute("UPDATE transaction_logs SET status='rejected' WHERE id=?", (row[0],))
                                     conn.commit()
-                                    st.error(f"Rejected UTR for {row[1]}")
                                     st.rerun()
                             st.markdown("---")
                 else:
                     st.success("🎉 No pending UTRs! You are all caught up.")
-
-                st.subheader("All Transaction Records")
-                all_logs = cursor.execute("SELECT pan, name, utr, payment_type, status, timestamp FROM transaction_logs ORDER BY id DESC").fetchall()
-                if all_logs:
-                    st.dataframe([{"PAN": r[0], "Name": r[1], "UTR": r[2], "Type": r[3], "Status": r[4], "Date": r[5]} for r in all_logs])
         except Exception as e:
             st.error(f"Error fetching logs: {e}")
 
     with tab2:
-        st.subheader("Manage Whitelisted PAN Numbers")
-        new_pan = st.text_input("Add New PAN to Whitelist").upper()
-        if st.button("Add to Whitelist"):
-            if re.match(PAN_REGEX, new_pan):
-                try:
-                    with get_db_connection() as conn:
-                        conn.cursor().execute("INSERT OR IGNORE INTO whitelist_pans (pan) VALUES (?)", (new_pan,))
-                        conn.commit()
-                    st.session_state.whitelisted_pans.add(new_pan)
-                    st.success(f"PAN {new_pan} added successfully!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error: {e}")
-            else:
-                st.error("❌ Enter a valid PAN Number (e.g., ABCDE1234F).")
-
-        remove_pan = st.selectbox("Select PAN to Remove", options=[""] + list(st.session_state.whitelisted_pans))
-        if st.button("Remove Selected PAN") and remove_pan:
-            try:
-                with get_db_connection() as conn:
-                    conn.cursor().execute("DELETE FROM whitelist_pans WHERE pan=?", (remove_pan,))
-                    conn.commit()
-                st.session_state.whitelisted_pans.remove(remove_pan)
-                st.success(f"PAN {remove_pan} removed.")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error: {e}")
-
-    with tab3:
-        st.subheader("Employee & Employer Database")
-        
-        if os.path.exists(DB_NAME):
-            with open(DB_NAME, "rb") as fp:
-                st.download_button(
-                    label="💾 Download Full Database Backup",
-                    data=fp,
-                    file_name=f"kosh_tax_backup_{date.today()}.sqlite",
-                    mime="application/x-sqlite3",
-                    type="primary"
-                )
-                st.caption("Regularly download this file if hosting on temporary cloud platforms.")
-                
+        st.subheader("System Configurations")
         try:
             with get_db_connection() as conn:
-                cursor = conn.cursor()
-                profiles = cursor.execute("SELECT pan, name, designation, district FROM employee_profiles").fetchall()
-                if profiles:
-                    st.write("Employee Profiles (Preview)")
-                    st.dataframe([{"PAN": r[0], "Name": r[1], "Designation": r[2], "District": r[3]} for r in profiles])
+                current_settings = conn.cursor().execute("SELECT upi_id, payee_name, amount, sender_email, sender_password FROM app_settings WHERE id=1").fetchone()
+            
+            with st.form("settings_form"):
+                st.markdown("**💰 Payment QR Settings**")
+                new_upi = st.text_input("Active UPI ID", value=current_settings[0])
+                new_name = st.text_input("Payee Name", value=current_settings[1])
+                new_amount = st.number_input("Fixed Amount to Collect (₹)", value=float(current_settings[2]))
                 
-                ddo_records = cursor.execute("SELECT tan, office_address, officer_name, father_name FROM ddo_masters").fetchall()
-                if ddo_records:
-                    st.write("DDO Masters Database")
-                    st.dataframe(ddo_records)
+                st.markdown("**📧 Auto-Email Dispatch Settings**")
+                new_email = st.text_input("Sender Gmail Address", value=current_settings[3], placeholder="e.g. admin@gmail.com")
+                new_pass = st.text_input("16-Digit Gmail App Password", value=current_settings[4], type="password")
+                
+                if st.form_submit_button("Update All Settings", type="primary"):
+                    with get_db_connection() as conn:
+                        conn.cursor().execute("UPDATE app_settings SET upi_id=?, payee_name=?, amount=?, sender_email=?, sender_password=? WHERE id=1", 
+                                              (new_upi, new_name, new_amount, new_email, new_pass))
+                        conn.commit()
+                    st.success("System configurations updated successfully!")
+                    st.rerun()
         except Exception as e:
-            st.error(f"Error loading database records: {e}")
+            st.error("Error loading settings")
+
+    with tab3:
+        st.subheader("Detailed Financial Ledger")
+        try:
+            with get_db_connection() as conn:
+                all_logs = conn.cursor().execute("SELECT timestamp, name, pan, utr, amount, payment_type, status, email FROM transaction_logs ORDER BY id DESC").fetchall()
+                if all_logs:
+                    st.dataframe([{"Date": r[0], "Name": r[1], "PAN": r[2], "UTR": r[3], "Amount": r[4], "Type": r[5], "Status": r[6], "Email": r[7]} for r in all_logs], use_container_width=True)
+        except Exception as e:
+            st.error("Error fetching ledger")
+            
+        if os.path.exists(DB_NAME):
+            with open(DB_NAME, "rb") as fp:
+                st.download_button(label="💾 Download Full Database Backup", data=fp, file_name=f"kosh_tax_backup_{date.today()}.sqlite", mime="application/x-sqlite3")
+
+    with tab4:
+        st.subheader("Manage Whitelisted PAN Numbers")
+        new_pan = st.text_input("Add New PAN to Whitelist").upper()
+        if st.button("Add to Whitelist") and re.match(PAN_REGEX, new_pan):
+            with get_db_connection() as conn:
+                conn.cursor().execute("INSERT OR IGNORE INTO whitelist_pans (pan) VALUES (?)", (new_pan,))
+                conn.commit()
+            st.session_state.whitelisted_pans.add(new_pan)
+            st.rerun()
 
     if st.button("🚪 Logout Admin"):
         st.session_state.is_admin_logged = False
@@ -488,41 +572,37 @@ def show_download_pdf():
         st.info("Your PAN is not whitelisted. Please complete the payment to generate a clean PDF.")
         st.markdown("**Note: Enter exact 12-digit UPI UTR...**")
         
+            # ==========================================
+        # ADMIN CONTROLLED DYNAMIC QR CODE
         # ==========================================
-        # AUTO-GENERATED MULTI-QR CODE SECTION
-        # ==========================================
+        try:
+            with get_db_connection() as conn:
+                settings = conn.cursor().execute("SELECT upi_id, payee_name, amount FROM app_settings WHERE id=1").fetchone()
+                if settings:
+                    upi_id, payee_name, amount = settings[0], settings[1], settings[2]
+                else:
+                    upi_id, payee_name, amount = "admin@upi", "Admin", 150.0
+        except:
+            upi_id, payee_name, amount = "admin@upi", "Admin", 150.0
+
         col_qr, col_info = st.columns([1, 2])
-        
         with col_qr:
-            upi_choice = st.radio(
-                "Select Payment Gateway:", 
-                ["UPI Option 1 (PhonePe/SBI)", "UPI Option 2 (Paytm/HDFC)"]
-            )
-            
-            if upi_choice == "UPI Option 1 (PhonePe/SBI)":
-                upi_id = "nitinmallick111-1@okicici"        # Apna primary UPI ID dalein
-                payee_name = "Anant Chandraushaa Mallick"
-            else:
-                upi_id = "nitin-0007@slc"        # Apna secondary UPI ID dalein
-                payee_name = "Nitin Chandraushaa Mallick"
-            
-            upi_url = f"upi://pay?pa={upi_id}&pn={payee_name}&cu=INR"
-            
+            upi_url = f"upi://pay?pa={upi_id}&pn={payee_name}&am={amount}&cu=INR"
             qr = qrcode.make(upi_url)
             img_buffer = BytesIO()
             qr.save(img_buffer, format="PNG")
             
+            st.markdown(f"**Amount to Pay: ₹{amount}**")
             st.image(img_buffer, caption=f"Scan to Pay: {upi_id}", width=200)
                 
         with col_info:
             st.markdown("### Payment Instructions:")
-            st.markdown("1. Select your preferred Payment Gateway from the left.")
-            st.markdown("2. Open PhonePe, Google Pay, or Paytm and scan the generated QR code.")
-            st.markdown("3. After successful payment, copy the **12-Digit UTR / Transaction ID**.")
-            st.markdown("4. Paste it below to unlock your PDF.")
+            st.markdown(f"1. Scan the QR code to pay **₹{amount}**.")
+            st.markdown("2. After successful payment, copy the **12-Digit UTR / Transaction ID**.")
+            st.markdown("3. Paste it below. Your PDF will be emailed to you upon verification.")
+            st.info(f"📧 PDF will be sent to: **{user_data.get('email', 'Your Email')}**")
         # ==========================================
 
-        # UTR Input (Niche Full Width Mein)
         utr_input = st.text_input("Enter 12-Digit UTR / Transaction Number", max_chars=12)
         
         if st.button("Submit UTR for Verification"):
@@ -536,17 +616,26 @@ def show_download_pdf():
                         if existing_utr:
                             st.error("❌ This UTR has already been used! Please enter a valid unique UTR.")
                         else:
-                            c.execute("INSERT INTO transaction_logs (pan, name, utr, payment_type, timestamp, status) VALUES (?, ?, ?, ?, ?, ?)",
-                                      (user_data['pan'], user_data['name'], utr_cleaned, "Manual_UPI", str(date.today()), "pending"))
+                            # Generate PDF right now and save temporarily
+                            os.makedirs("temp_pdfs", exist_ok=True)
+                            pdf_bytes = generate_form16_pdf(user_data, is_trial=False)
+                            temp_pdf_path = f"temp_pdfs/{user_data['pan']}_{utr_cleaned}.pdf"
+                            with open(temp_pdf_path, "wb") as f:
+                                f.write(pdf_bytes)
+
+                            # Save transaction info including AMOUNT and EMAIL
+                            c.execute("INSERT INTO transaction_logs (pan, name, utr, payment_type, timestamp, status, amount, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                      (user_data['pan'], user_data['name'], utr_cleaned, "Manual_UPI", str(date.today()), "pending", amount, user_data.get('email', '')))
                             conn.commit()
                             
                             st.session_state.payment_status = 'awaiting_approval'
-                            st.success("✅ UTR Submitted! Waiting for Admin Approval.")
+                            st.success("✅ UTR Submitted! You will receive your PDF via email once approved. You can close this page now.")
                             st.rerun()
                 except Exception as e:
                     st.error(f"Failed to log transaction: {e}")
             else:
                 st.error("❌ Invalid Format! UTR must be exactly 12 numeric digits.")
+
 
     elif st.session_state.payment_status == 'awaiting_approval':
         st.subheader("⏳ Awaiting Admin Approval")
