@@ -223,41 +223,40 @@ def show_review():
     st.title("📋 Review Your Data")
     data = st.session_state.extracted_data or {}
 
-    with st.form("review_form"):
+        with st.form("review_form"):
         st.subheader("🏢 Employer Details")
         col_d1, col_d2 = st.columns(2)
-    with col_d1:
-    ddo_tan = st.text_input(
-        "TAN Number",
-        value=data.get('ddo_tan', '')
-    )
+        
+        with col_d1:
+            ddo_tan = st.text_input(
+                "TAN Number",
+                value=data.get('ddo_tan', '')
+            )
+            ddo_pan = st.text_input(
+                "PAN of Deductor / DDO",
+                value=data.get('ddo_pan', '')
+            )
+            employer_address = st.text_area(
+                "Name & Address of the Employer",
+                value=data.get('employer_address', '')
+            )
 
-    ddo_pan = st.text_input(
-        "PAN of Deductor / DDO",
-        value=data.get('ddo_pan', '')
-    )
+        with col_d2:
+            ddo_officer = st.text_input(
+                "DDO Officer Name",
+                value=data.get('ddo_officer', '')
+            )
+            ddo_father = st.text_input(
+                "DDO Father Name",
+                value=data.get('ddo_father', '')
+            )
+            ddo_capacity = st.text_input(
+                "DDO Capacity",
+                value="DISBURSING & DRAWING OFFICER"
+            )
 
-    employer_address = st.text_area(
-        "Name & Address of the Employer",
-        value=data.get('employer_address', '')
-    )
-
-with col_d2:
-    ddo_officer = st.text_input(
-        "DDO Officer Name",
-        value=data.get('ddo_officer', '')
-    )
-
-    ddo_father = st.text_input(
-        "DDO Father Name",
-        value=data.get('ddo_father', '')
-    )
-
-    ddo_capacity = st.text_input(
-        "DDO Capacity",
-        value="DISBURSING & DRAWING OFFICER"
-    )
         st.subheader("👤 Personal & Employment Details")
+
         col1, col2 = st.columns(2)
         with col1:
             pan = st.text_input("PAN *", value=data.get('pan', ''))
