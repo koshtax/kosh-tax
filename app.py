@@ -300,9 +300,24 @@ def show_upload():
             st.session_state.extracted_data = {**scanned, **saved_profile}
             st.success("✅ SALARY SLIP SCANNED SUCCESSFULLY!")
 
+            # ----------- YAHAN SE NAYA CODE ADD KAREIN -----------
+            st.markdown("### 📊 Extracted Summary")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Name", st.session_state.extracted_data.get('name', 'N/A'))
+            with col2:
+                st.metric("PAN", st.session_state.extracted_data.get('pan', 'N/A'))
+            with col3:
+                st.metric("Basic Pay", f"₹{st.session_state.extracted_data.get('basic', 0):,}")
+            
+            total_entries = len(st.session_state.extracted_data.get('monthly_entries', []))
+            st.info(f"📁 Total Salary Blocks/Entries detected: {total_entries}")
+            # ----------- YAHAN TAK NAYA CODE ADD KAREIN -----------
+
             if st.button("PROCEED TO REVIEW & ENTRY →", type="primary"):
                 st.session_state.current_page = 'review'
                 st.rerun()
+
 
     if st.button("← BACK TO HOME"):
         st.session_state.current_page = 'home'
