@@ -756,7 +756,6 @@ def _merge_config(data: Dict[str, Any]) -> Dict[str, Any]:
         cfg.update(supplied)
     return cfg
 
-
 HTML_TEMPLATE = r"""
 <!doctype html>
 <html lang="hi">
@@ -1314,7 +1313,7 @@ HTML_TEMPLATE = r"""
     <div style="margin-top: 30px; display: flex; justify-content: space-between;">
         <div style="width: 30%; text-align: center;">
             ___________________________<br><br>
-            <b>हस्ताक्षर लिपिक</b>
+            <b>हस्ताक्षर</b>
         </div>
         <div style="width: 30%; text-align: center;">
             ___________________________<br><br>
