@@ -784,32 +784,36 @@ HTML_TEMPLATE = r"""
         size: A4 landscape;
         margin: 8mm;
     }
-
+    @page schedule_page{
+        size: A4 portrait;
+        margin: 5mm;
+    }
         /* =========================================
        SHRINK SETTINGS (Sirf Page 1 ke liye) 
        ========================================= */
     .page-1 {
-        font-size: 10px; 
-        line-height: 1.15;
-        padding: 5px;
+        page: schedule_page;
+        font-size: 9px; 
+        line-height: 1.1;
+        padding: 0;
     }
     .page-1 table {
-        margin-top: 4px;
-        margin-bottom: 6px;
+        margin-top: 2px;
+        margin-bottom: 4px;
     }
     .page-1 th, .page-1 td {
-        padding: 2px 4px;
+        padding: 1px 3px;
     }
     .page-1 .title-header {
-        font-size: 15px;
-        margin-bottom: 3px;
+        font-size: 14px;
+        margin-bottom: 2px;
     }
     .page-1 .sub-header {
-        font-size: 11px;
-        margin-bottom: 5px;
+        font-size: 10px;
+        margin-bottom: 3px;
     }
     .page-1 th {
-        font-size: 11px;
+        font-size: 10px;
     }
   
     * { box-sizing: border-box; }
