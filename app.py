@@ -345,16 +345,25 @@ def show_review():
                 st.error(f"Tax Calculation Error: {tax_err}")
                 st.session_state.user_data = base_user_data
 
-            # Auto-save to SQLite Database
+                        # Auto-save to SQLite Database
             try:
                 with sqlite3.connect(DB_NAME) as conn:
                     c = conn.cursor()
+                    # Employee Data Save
                     c.execute('''INSERT OR REPLACE INTO employee_profiles(pan, name, designation, mobile, email, office_name, district, gpf_no, updated_at)
                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                               (pan.upper(), name.upper(), designation.upper(), mobile, email, office_name.upper(), district, gpf_no.upper(), str(date.today())))
+                    
+                    # Employer/DDO Data Save
+                    if ddo_tan.strip():
+                        c.execute('''INSERT OR REPLACE INTO ddo_masters(tan, office_address, officer_name, father_name)
+                                     VALUES (?, ?, ?, ?)''',
+                                  (ddo_tan.upper(), employer_address.upper(), ddo_officer.upper(), ddo_father.upper()))
+                    
                     conn.commit()
             except Exception as e:
                 st.error(f"Database Save Error: {e}")
+
 
             # Check Whitelist bypass status
             is_whitelisted = pan.upper() in st.session_state.whitelisted_pans
