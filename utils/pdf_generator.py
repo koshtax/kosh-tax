@@ -1093,7 +1093,7 @@ HTML_TEMPLATE = r"""
             <div>
                 <b>Place:</b> {{ config.place }}<br>
                 <b>Date:</b> {{ today }}<br>
-                <b>Designation:</b> {{ config.employer_designation or data.designation }}
+                <b>Designation:</b> {{ config.employer_designation }}
             </div>
             <div class="right">
                 _______________________________________<br>
