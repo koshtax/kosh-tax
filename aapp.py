@@ -226,14 +226,37 @@ def show_review():
     with st.form("review_form"):
         st.subheader("🏢 Employer Details")
         col_d1, col_d2 = st.columns(2)
-        with col_d1:
-            ddo_tan = st.text_input("TAN Number", value=data.get('ddo_tan', ''))
-            employer_address = st.text_area("Name & Address of the Employer", value=data.get('employer_address', ''))
-        with col_d2:
-            ddo_officer = st.text_input("Ddo Officer Name", value=data.get('ddo_officer', ''))
-            ddo_father = st.text_input("Ddo Father Name", value=data.get('ddo_father', ''))
-            st.text_input("Designation", value="Drawing and Disbursing Officer", disabled=True)
+    with col_d1:
+    ddo_tan = st.text_input(
+        "TAN Number",
+        value=data.get('ddo_tan', '')
+    )
 
+    ddo_pan = st.text_input(
+        "PAN of Deductor / DDO",
+        value=data.get('ddo_pan', '')
+    )
+
+    employer_address = st.text_area(
+        "Name & Address of the Employer",
+        value=data.get('employer_address', '')
+    )
+
+with col_d2:
+    ddo_officer = st.text_input(
+        "DDO Officer Name",
+        value=data.get('ddo_officer', '')
+    )
+
+    ddo_father = st.text_input(
+        "DDO Father Name",
+        value=data.get('ddo_father', '')
+    )
+
+    ddo_capacity = st.text_input(
+        "DDO Capacity",
+        value="DISBURSING & DRAWING OFFICER"
+    )
         st.subheader("👤 Personal & Employment Details")
         col1, col2 = st.columns(2)
         with col1:
@@ -279,14 +302,41 @@ def show_review():
         if submitted:
             # 1. Base user data dictionary
             base_user_data = {
-                'pan': pan.upper(), 'name': name.upper(), 'designation': designation.upper(),
-                'mobile': mobile, 'email': email, 'office_name': office_name.upper(),
-                'district': district, 'gpf_no': gpf_no.upper(), 'ddo_tan': ddo_tan.upper(),
-                'employer_address': employer_address.upper(), 'ddo_officer': ddo_officer.upper(),
-                'ddo_father': ddo_father.upper(), 'basic': basic, 'da': da, 'hra': hra,
-                'medical': medical, 'gpf': gpf, 'tds': tds, 'assessment_year': assessment_year,
-                'tax_regime': tax_regime, 'monthly_entries': data.get('monthly_entries', [])
-            }
+    # Employee
+    'pan': pan.upper(),
+    'name': name.upper(),
+    'designation': designation.upper(),
+
+    'mobile': mobile,
+    'email': email,
+    'office_name': office_name.upper(),
+    'district': district,
+    'gpf_no': gpf_no.upper(),
+
+    # DDO / Deductor
+    'ddo_pan': ddo_pan.upper(),
+    'ddo_tan': ddo_tan.upper(),
+    'ddo_officer': ddo_officer.upper(),
+    'ddo_father': ddo_father.upper(),
+    'ddo_capacity': ddo_capacity.upper(),
+
+    'employer_address': employer_address.upper(),
+
+    # Salary
+    'basic': basic,
+    'da': da,
+    'hra': hra,
+    'medical': medical,
+    'gpf': gpf,
+    'tds': tds,
+
+    # Tax
+    'assessment_year': assessment_year,
+    'tax_regime': tax_regime,
+
+    # Monthly salary entries
+    'monthly_entries': data.get('monthly_entries', [])
+}
             
             # 2. FIXED: Integrated calculate_tax to compute tax details automatically
             try:
