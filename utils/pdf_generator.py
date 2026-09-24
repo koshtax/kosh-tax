@@ -1535,15 +1535,38 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
     relief_89 = _money(data.get("relief_89", 0))
     net_tax_payable = max(0.0, tax_after_cess - relief_89)
     rounded_total_income = round(total_income / 10) * 10
-    tax_slab_5 = 0
-    tax_slab_10 = 0
-    tax_slab_15 = 0
-    tax_slab_20 = 0
-    tax_slab_30 = 0
+    
+    # Slab Breakdown (New Regime FY 24-25)
+    tax_slab_5 = tax_slab_10 = tax_slab_15 = tax_slab_20 = tax_slab_30 = 0
+    inc = rounded_total_income
+    
+    if inc > 300000:
+        if inc <= 700000:
+            tax_slab_5 = (inc - 300000) * 0.05
+        elif inc <= 1000000:
+            tax_slab_5 = 20000
+            tax_slab_10 = (inc - 700000) * 0.10
+        elif inc <= 1200000:
+            tax_slab_5 = 20000
+            tax_slab_10 = 30000
+            tax_slab_15 = (inc - 1000000) * 0.15
+        elif inc <= 1500000:
+            tax_slab_5 = 20000
+            tax_slab_10 = 30000
+            tax_slab_15 = 30000
+            tax_slab_20 = (inc - 1200000) * 0.20
+        else:
+            tax_slab_5 = 20000
+            tax_slab_10 = 30000
+            tax_slab_15 = 30000
+            tax_slab_20 = 60000
+            tax_slab_30 = (inc - 1500000) * 0.30
+            
     fd_interest = 0
     tds_deducted = 0
     challan_tax = 0
     balance_tax_payable = net_tax_payable - relief_89
+
 
 
     # The actual monthly TDS total remains visible and auditable.
