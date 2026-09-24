@@ -996,10 +996,10 @@ HTML_TEMPLATE = r"""
 
         <table>
         <tr>
-            <td width="25%"><b>PAN of the Deductor</b><br>{{ data.ddo_tan or '......................' }}</td>
+            <td width="25%"><b>PAN of the Deductor</b><br>{{ data.ddo_pan or '......................' }}</td>
             <td width="25%"><b>TAN of the Deductor</b><br>{{ data.ddo_tan or '......................' }}</td>
             <td width="25%"><b>PAN of the Employee</b><br>{{ data.pan }}</td>
-            <td width="25%"><b>Employee Reference No.</b><br>{{ data.employee_reference_no or "-" }}</td>
+            <td width="25%"><b>Employee Reference No.</b><br>{{ data.gpf or "-" }}</td>
         </tr>
         <tr>
             <td colspan="2">
@@ -1086,19 +1086,19 @@ HTML_TEMPLATE = r"""
     <div style="border: 1px solid #000; padding: 10px; margin-top: 10px;">
         <div class="center bold" style="font-size: 14px;">Verification</div>
         <p style="margin-top: 5px; text-align: justify;">
-            I, <b>{{ data.name }}</b> son/daughter of <b>{{ data.fathers_name or '.............................................' }}</b> working in the capacity of <b>{{ config.employer_designation or data.designation }}</b> do hereby certify that a sum of <b>Rs. {{ money(tds) }}</b> has been deducted and deposited to the credit of the Central Government. I further certify that the information given above is true, complete and correct.
+            I, <b>{{ data.ddo_officer or '.............................................' }}</b> son/daughter of <b>{{ data.ddo_fathers or '.............................................' }}</b> working in the capacity of <b>{{ data.ddo_capacity or 'DISBURSING & DRAWING OFFICER' }}</b> do hereby certify that a sum of <b>Rs. {{ money(tds) }}</b> has been deducted and deposited to the credit of the Central Government. I further certify that the information given above is true, complete and correct.
         </p>
         <br>
         <div style="display: flex; justify-content: space-between;">
             <div>
-                <b>Place:</b> {{ config.place }}<br>
+                <b>Place:</b> {{ '...........................' }}<br>
                 <b>Date:</b> {{ today }}<br>
-                <b>Designation:</b> {{ config.employer_designation }}
+                <b>Designation:</b> {{ 'DISBURSING & DRAWING OFFICER' }}
             </div>
             <div class="right">
                 _______________________________________<br>
                 (Signature of person responsible for deduction of tax)<br>
-                <b>Full Name: {{ config.employer_name or '........................................' }}</b>
+                <b>Full Name: {{ data.ddo_officer }}</b>b
             </div>
         </div>
     </div>
@@ -1208,14 +1208,14 @@ HTML_TEMPLATE = r"""
     <div style="border: 1px solid #000; padding: 10px; margin-top: 10px;">
         <div class="center bold" style="font-size: 14px;">Verification</div>
         <p style="margin-top: 5px; text-align: justify;">
-            I, <b>{{ data.name }}</b> son/daughter of <b>{{ data.fathers_name or '.............................................' }}</b> working in the capacity of <b>{{ config.employer_designation or data.designation }}</b> do hereby certify that the information given above is true, complete and correct.
+            I, <b>{{ data.ddo_officer }}</b> son/daughter of <b>{{ data.ddo_fathers or '.............................................' }}</b> working in the capacity of <b>{{ 'DISBURSING & DRAWING OFFICER' }}</b> do hereby certify that the information given above is true, complete and correct.
         </p>
         <br>
         <div style="display: flex; justify-content: space-between;">
             <div>
                 <b>Place:</b> {{ config.place }}<br>
                 <b>Date:</b> {{ today }}<br>
-                <b>Designation:</b> {{ config.employer_designation or data.designation }}
+                <b>Designation:</b> {{ 'DISBURSING & DRAWING OFFICER' }}
             </div>
             <div class="right">
                 _______________________________________<br>
@@ -1314,7 +1314,7 @@ HTML_TEMPLATE = r"""
     <div style="margin-top: 30px; display: flex; justify-content: space-between;">
         <div style="width: 30%; text-align: center;">
             ___________________________<br><br>
-            <b>हस्ताक्षर</b>
+            <b>करदाता का हस्ताक्षर</b>
         </div>
         <div style="width: 30%; text-align: center;">
             ___________________________<br><br>
