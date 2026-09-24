@@ -1492,7 +1492,7 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
     book_adjustment_rows = data.get("book_adjustment_rows") or []
     challan_rows = data.get("challan_rows") or []
 
-      import base64
+    import base64
     import logging
     from jinja2 import Environment, BaseLoader, select_autoescape
 
