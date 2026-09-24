@@ -131,7 +131,7 @@ def _is_arrear(month_name: str, index: int, explicit: Any = None) -> bool:
         return bool(explicit)
 
     s = _clean(month_name).lower()
-    arrear_words = ("arrear", "bakaya", "baki", "à¤¬à¤à¤¾à¤¯à¤¾")
+        arrear_words = ("arrear", "bakaya", "baki", "बकाया")
     if any(word in s for word in arrear_words):
         return True
 
@@ -1492,18 +1492,27 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
     book_adjustment_rows = data.get("book_adjustment_rows") or []
     challan_rows = data.get("challan_rows") or []
 
-        # Font files ko Base64 mein convert karein
-    import base64
+      import base64
+    import logging
+    from jinja2 import Environment, BaseLoader, select_autoescape
+
+    # Font files ko Base64 mein convert karein (with Error Logging)
     try:
         with open(MODULE_DIR / "fonts" / "NotoSansDevanagari-Regular.ttf", "rb") as f:
             reg_b64 = base64.b64encode(f.read()).decode("utf-8")
         with open(MODULE_DIR / "fonts" / "NotoSansDevanagari-Bold.ttf", "rb") as f:
             bold_b64 = base64.b64encode(f.read()).decode("utf-8")
-    except Exception:
+    except Exception as e:
+        logging.error(f"CRITICAL: Devanagari fonts not found! PDF Hindi text will break. Error: {e}")
         reg_b64 = ""
         bold_b64 = ""
 
-    template = Template(HTML_TEMPLATE)
+    # SECURE TEMPLATE INITIALIZATION (Fixes HTML injection/breakage)
+    env = Environment(
+        loader=BaseLoader(),
+        autoescape=select_autoescape(['html', 'xml'])
+    )
+    template = env.from_string(HTML_TEMPLATE)
 
     html_content = template.render(
         data=data,
