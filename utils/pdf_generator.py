@@ -131,7 +131,7 @@ def _is_arrear(month_name: str, index: int, explicit: Any = None) -> bool:
         return bool(explicit)
 
     s = _clean(month_name).lower()
-        arrear_words = ("arrear", "bakaya", "baki", "बकाया")
+    arrear_words = ("arrear", "bakaya", "baki", "बकाया")
     if any(word in s for word in arrear_words):
         return True
 
