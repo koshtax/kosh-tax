@@ -560,55 +560,55 @@ elif st.session_state.payment_status == 'awaiting_approval':
       st.subheader("⏳ Awaiting Admin Approval")
       st.warning("Your UTR has been submitted and is currently being verified by the admin.")
         
-        if st.button("🔄 Refresh Status", type="primary"):
-            try:
-                with get_db_connection() as conn:
-                    c = conn.cursor()
-                    txn = c.execute("SELECT status FROM transaction_logs WHERE pan=? ORDER BY id DESC LIMIT 1", (user_data['pan'],)).fetchone()
-                    if txn and txn[0] == 'approved':
-                        st.session_state.payment_status = 'completed'
-                        st.rerun()
-                    elif txn and txn[0] == 'rejected':
-                        st.session_state.payment_status = 'pending'
-                        st.error("❌ Your UTR was rejected by the admin. Please provide a valid UTR.")
-                        st.rerun()
-                    else:
-                        st.info("Still pending... Please wait.")
-            except Exception as e:
-                st.error(f"Error checking status: {e}")
+     if st.button("🔄 Refresh Status", type="primary"):
+        try:
+            with get_db_connection() as conn:
+                 c = conn.cursor()
+                txn = c.execute("SELECT status FROM transaction_logs WHERE pan=? ORDER BY id DESC LIMIT 1", (user_data['pan'],)).fetchone()
+                if txn and txn[0] == 'approved':
+                    st.session_state.payment_status = 'completed'
+                    st.rerun()
+                elif txn and txn[0] == 'rejected':
+                    st.session_state.payment_status = 'pending'
+                    st.error("❌ Your UTR was rejected by the admin. Please provide a valid UTR.")
+                    st.rerun()
+                else:
+                    st.info("Still pending... Please wait.")
+        except Exception as e:
+            st.error(f"Error checking status: {e}")
 
+else:
+    if is_whitelisted and not is_trial:
+        try:
+            with get_db_connection() as conn:
+                c = conn.cursor()
+                # Log whitelist usage safely
+                c.execute("INSERT INTO transaction_logs (pan, name, utr, payment_type, timestamp, status) VALUES (?, ?, ?, ?, ?, ?)",
+                            (user_data['pan'], user_data['name'], f"WL-{user_data['pan']}-{date.today()}", "Whitelist", str(date.today()), "approved"))
+                conn.commit()
+        except Exception:
+            pass 
+        st.success("🎉 Whitelist Access Granted! Clean PDF copy ready.")
+    elif is_trial:
+        st.warning("⚠️ Running in FREE TRIAL Mode. Generated PDF will contain a watermark.")
     else:
-        if is_whitelisted and not is_trial:
-            try:
-                with get_db_connection() as conn:
-                    c = conn.cursor()
-                    # Log whitelist usage safely
-                    c.execute("INSERT INTO transaction_logs (pan, name, utr, payment_type, timestamp, status) VALUES (?, ?, ?, ?, ?, ?)",
-                              (user_data['pan'], user_data['name'], f"WL-{user_data['pan']}-{date.today()}", "Whitelist", str(date.today()), "approved"))
-                    conn.commit()
-            except Exception:
-                pass 
-            st.success("🎉 Whitelist Access Granted! Clean PDF copy ready.")
-        elif is_trial:
-            st.warning("⚠️ Running in FREE TRIAL Mode. Generated PDF will contain a watermark.")
-        else:
-            st.success("🎉 Payment Verified! Clean PDF copy ready for deployment.")
+        st.success("🎉 Payment Verified! Clean PDF copy ready for deployment.")
 
-        with st.spinner("Generating Form 16 PDF..."):
-            pdf_bytes = generate_form16_pdf(user_data, is_trial=is_trial)
+    with st.spinner("Generating Form 16 PDF..."):
+        pdf_bytes = generate_form16_pdf(user_data, is_trial=is_trial)
 
-            st.download_button(
-                label="📥 Download Form 16 PDF",
-                data=pdf_bytes,
-                file_name=f"Form16_{user_data['pan']}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
+        st.download_button(
+            label="📥 Download Form 16 PDF",
+            data=pdf_bytes,
+            file_name=f"Form16_{user_data['pan']}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
 
-    if st.button("← Start Over (Home)"):
-        reset_user_session()
-        st.session_state.current_page = 'home'
-        st.rerun()
+if st.button("← Start Over (Home)"):
+    reset_user_session()
+    st.session_state.current_page = 'home'
+    st.rerun()
 
 # ================= APP ROUTER =================
 def main():
