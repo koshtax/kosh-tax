@@ -5,6 +5,7 @@ import sqlite3
 from datetime import date
 import re
 import os
+import requests
 from utils.salary_parser import parse_salary_slip
 from utils.pdf_generator import generate_form16_pdf
 from utils.tax_calculator import calculate_tax
@@ -55,10 +56,10 @@ def init_db():
             )''')
                     # --- NEW ADDITIONS FOR ADMIN SETTINGS & EMAIL ---
             c.execute('''CREATE TABLE IF NOT EXISTS app_settings (
-                id INTEGER PRIMARY KEY, upi_id TEXT, payee_name TEXT, amount REAL,
-                sender_email TEXT, sender_password TEXT
+                 id INTEGER PRIMARY KEY, upi_id TEXT, payee_name TEXT, amount REAL,
+                 sender_email TEXT, sender_password TEXT, telegram_token TEXT, telegram_chat_id TEXT
             )''')
-            
+      
             c.execute("SELECT count(*) FROM app_settings")
             if c.fetchone()[0] == 0:
                 c.execute("INSERT INTO app_settings (id, upi_id, payee_name, amount, sender_email, sender_password) VALUES (1, 'admin@upi', 'Kosh-Tax Admin', 150.0, '', '')")
@@ -72,6 +73,11 @@ def init_db():
             except: pass
             try: c.execute("ALTER TABLE app_settings ADD COLUMN sender_password TEXT DEFAULT ''")
             except: pass
+            try: c.execute("ALTER TABLE app_settings ADD COLUMN telegram_token TEXT DEFAULT ''")
+            except: pass
+            try: c.execute("ALTER TABLE app_settings ADD COLUMN telegram_chat_id TEXT DEFAULT ''")
+            except: pass
+
             # ------------------------------------------------
 
             c.execute("SELECT count(*) FROM whitelist_pans")
@@ -130,6 +136,19 @@ def send_approval_email(receiver_email, user_name, pdf_file_path):
     except Exception as e:
         st.error(f"Failed to send email: Please check your App Password or Email in Admin Settings.")
         return False
+
+def send_telegram_alert(name, pan, utr, amount):
+    try:
+        with get_db_connection() as conn:
+            settings = conn.cursor().execute("SELECT telegram_token, telegram_chat_id FROM app_settings WHERE id=1").fetchone()
+            if settings and settings[0] and settings[1]:
+                token, chat_id = settings[0], settings[1]
+                msg = f"🔔 *Naya Payment Aaya Hai!*\n\n👤 *Name:* {name}\n💳 *PAN:* {pan}\n💰 *Amount:* ₹{amount}\n🧾 *UTR:* `{utr}`\n\nJaldi se Admin Panel check karein!"
+                url = f"https://api.telegram.org/bot{token}/sendMessage"
+                requests.post(url, json={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}, timeout=5)
+    except Exception as e:
+        pass # Notification fail ho toh bhi user ka process na ruke
+
 
 def load_whitelist():
     try:
@@ -291,7 +310,7 @@ def show_admin_dashboard():
         st.subheader("System Configurations")
         try:
             with get_db_connection() as conn:
-                current_settings = conn.cursor().execute("SELECT upi_id, payee_name, amount, sender_email, sender_password FROM app_settings WHERE id=1").fetchone()
+                current_settings = conn.cursor().execute("SELECT upi_id, payee_name, amount, sender_email, sender_password, telegram_token, telegram_chat_id FROM app_settings WHERE id=1").fetchone()
             
             with st.form("settings_form"):
                 st.markdown("**💰 Payment QR Settings**")
@@ -303,10 +322,14 @@ def show_admin_dashboard():
                 new_email = st.text_input("Sender Gmail Address", value=current_settings[3], placeholder="e.g. admin@gmail.com")
                 new_pass = st.text_input("16-Digit Gmail App Password", value=current_settings[4], type="password")
                 
+                st.markdown("**📱 Telegram Notification Settings**")
+                new_bot_token = st.text_input("Telegram Bot Token", value=current_settings[5] if len(current_settings)>5 else "")
+                new_chat_id = st.text_input("Telegram Chat ID", value=current_settings[6] if len(current_settings)>6 else "")
+                
                 if st.form_submit_button("Update All Settings", type="primary"):
                     with get_db_connection() as conn:
-                        conn.cursor().execute("UPDATE app_settings SET upi_id=?, payee_name=?, amount=?, sender_email=?, sender_password=? WHERE id=1", 
-                                              (new_upi, new_name, new_amount, new_email, new_pass))
+                        conn.cursor().execute("UPDATE app_settings SET upi_id=?, payee_name=?, amount=?, sender_email=?, sender_password=?, telegram_token=?, telegram_chat_id=? WHERE id=1", 
+                                              (new_upi, new_name, new_amount, new_email, new_pass, new_bot_token, new_chat_id))
                         conn.commit()
                     st.success("System configurations updated successfully!")
                     st.rerun()
@@ -627,8 +650,13 @@ def show_download_pdf():
                             c.execute("INSERT INTO transaction_logs (pan, name, utr, payment_type, timestamp, status, amount, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                                       (user_data['pan'], user_data['name'], utr_cleaned, "Manual_UPI", str(date.today()), "pending", amount, user_data.get('email', '')))
                             conn.commit()
+                                                    
+                            # --- STRIKE 4: YE LINE ADD KARNI HAI ---
+                            send_telegram_alert(user_data['name'], user_data['pan'], utr_cleaned, amount)
+                            # ---------------------------------------
                             
                             st.session_state.payment_status = 'awaiting_approval'
+                            
                             st.success("✅ UTR Submitted! You will receive your PDF via email once approved. You can close this page now.")
                             st.rerun()
                 except Exception as e:
