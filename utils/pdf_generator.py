@@ -1534,6 +1534,17 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
     tax_after_cess = _money(tax_after_rebate + cess)
     relief_89 = _money(data.get("relief_89", 0))
     net_tax_payable = max(0.0, tax_after_cess - relief_89)
+    rounded_total_income = round(total_income / 10) * 10
+    tax_slab_5 = 0
+    tax_slab_10 = 0
+    tax_slab_15 = 0
+    tax_slab_20 = 0
+    tax_slab_30 = 0
+    fd_interest = 0
+    tds_deducted = 0
+    challan_tax = 0
+    balance_tax_payable = net_tax_payable - relief_89
+
 
     # The actual monthly TDS total remains visible and auditable.
     # It is NOT overwritten by the derived tax value.
@@ -1619,6 +1630,17 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
         today=date.today().strftime("%d.%m.%Y"),
         is_trial=is_trial,
         footer_text="DEVELOPED & DESIGNED BY @ NITIN MALLICK" if is_trial else "",
+        rounded_total_income=rounded_total_income,
+        tax_slab_5=tax_slab_5,
+        tax_slab_10=tax_slab_10,
+        tax_slab_15=tax_slab_15,
+        tax_slab_20=tax_slab_20,
+        tax_slab_30=tax_slab_30,
+        fd_interest=fd_interest,
+        tds_deducted=tds_deducted,
+        challan_tax=challan_tax,
+        balance_tax_payable=balance_tax_payable,
+
         money=_fmt,
     )
 
