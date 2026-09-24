@@ -500,11 +500,11 @@ def show_download_pdf():
             )
             
             if upi_choice == "UPI Option 1 (PhonePe/SBI)":
-                upi_id = "aapka_pehla_upi@bank"        # Apna primary UPI ID dalein
-                payee_name = "Nitin Mallick"
+                upi_id = "nitinmallick111-1@okicici"        # Apna primary UPI ID dalein
+                payee_name = "Anant Chandraushaa Mallick"
             else:
-                upi_id = "aapka_dusra_upi@bank"        # Apna secondary UPI ID dalein
-                payee_name = "Nitin Mallick"
+                upi_id = "nitin-0007@slc"        # Apna secondary UPI ID dalein
+                payee_name = "Nitin Chandraushaa Mallick"
             
             upi_url = f"upi://pay?pa={upi_id}&pn={payee_name}&cu=INR"
             
