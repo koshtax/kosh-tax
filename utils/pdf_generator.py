@@ -1091,7 +1091,7 @@ HTML_TEMPLATE = r"""
         <br>
         <div style="display: flex; justify-content: space-between;">
             <div>
-                <b>Place:</b> {{ 'data.district' }}<br>
+                <b>Place:</b> {{ data.district }}<br>
                 <b>Date:</b> {{ today }}<br>
                 <b>Designation:</b> {{ 'DISBURSING & DRAWING OFFICER' }}
             </div>
