@@ -61,7 +61,7 @@ def parse_salary_slip(file):
             extracted['confidence'] += 20
 
         if not extracted['name']:
-            extracted['name'] = "JAYA KUMARI"
+            extracted['name'] = "DUMMY NAME"
 
         # 5. Multi-Block Scanning for Slips
         salary_blocks = re.split(r'GOVT\.\s*OF\s*JHARKHAND', text_upper)
