@@ -1680,6 +1680,7 @@ def generate_form16_pdf(data: Dict[str, Any], is_trial: bool = False) -> bytes:
         tax_slab_10=tax_slab_10,
         tax_slab_15=tax_slab_15,
         tax_slab_20=tax_slab_20,
+        tax_slab_25=tax_slab_25,
         tax_slab_30=tax_slab_30,
         fd_interest=fd_interest,
         tds_deducted=tds_deducted,
