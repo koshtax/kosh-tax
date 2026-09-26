@@ -523,12 +523,20 @@ def show_review():
             gpf = st.number_input("GPF (₹)", value=float(data.get('gpf', 0)))
             tds = st.number_input("TDS (₹)", value=float(data.get('tds', 0)))
 
-        st.subheader("📊 Tax Details")
-        col1, col2 = st.columns(2)
-        with col1:
-            assessment_year = st.selectbox("Assessment Year", ["AY 2025-26 (FY 2024-25)", "AY 2026-27 (FY 2025-26)"])
-        with col2:
-            tax_regime = st.selectbox("Tax Regime", ["NEW REGIME", "OLD REGIME"])
+        st.subheader("📊 Tax Details (Auto-Derived)")
+        
+        # NAYA LOGIC: DB se FY uthao aur AY calculate karo
+        try:
+            with get_db_connection() as conn:
+                sys_fy = conn.cursor().execute("SELECT active_fy FROM app_settings WHERE id=1").fetchone()[0]
+        except:
+            sys_fy = "2025-2026"
+            
+        ay_start = int(sys_fy.split('-')[0]) + 1
+        assessment_year = f"AY {ay_start}-{str(ay_start+1)[-2:]}"
+        tax_regime = "NEW REGIME"
+
+        st.info(f"📅 **Financial Year:** {sys_fy} | **Assessment Year:** {assessment_year} | **Regime:** {tax_regime}")
 
         submitted = st.form_submit_button("Save & Proceed to Download →", type="primary", use_container_width=True)
 
