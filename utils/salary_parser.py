@@ -3,11 +3,13 @@ import re
 
 def parse_salary_slip(file):
     """
-    Fully Restored & Audited Multi-Block Parser with 7th CPC Validation & Month Extraction.
+    Fully Restored & Audited Multi-Block Parser with 7th CPC Validation, 
+    TA/Others Extraction & Dynamic Year Detection.
     """
     extracted = {
         'name': '', 'pan': '', 'designation': '',
         'basic': 0.0, 'da': 0.0, 'hra': 0.0, 'medical': 0.0,
+        'ta': 0.0, 'others': 0.0,
         'gross': 0.0, 'gpf': 0.0, 'ptax': 0.0, 'tds': 0.0, 'gli': 0.0,
         'net_income': 0.0, 'gpf_no': '', 'monthly_entries': [], 'confidence': 0
     }
@@ -31,18 +33,15 @@ def parse_salary_slip(file):
 
         text_upper = full_text.upper()
 
-        # 1. Extract PAN
         pan_match = re.search(r'([A-Z]{5}[0-9]{4}[A-Z]{1})', text_upper)
         if pan_match:
             extracted['pan'] = pan_match.group(1).upper()
             extracted['confidence'] += 20
 
-        # 2. Extract GPF / PRAN Number
         gpf_no_match = re.search(r'(?:EMPLOYEE\s*GPF\s*NO\.?|GPF|PRAN|PF)\s*NO\.?\s*[:\-]?\s*([A-Z0-9\/\-]+)', text_upper)
         if gpf_no_match:
             extracted['gpf_no'] = gpf_no_match.group(1).strip().upper()
 
-        # 3. Extract Designation
         for des in ["ASSISTANT TEACHER", "+2 TEACHER", "TEACHER", "CLERK", "LIPIK", "HEADMASTER", "PRINCIPAL", "ACCOUNTANT"]:
             if des in text_upper:
                 extracted['designation'] = des.upper()
@@ -50,7 +49,6 @@ def parse_salary_slip(file):
         if not extracted['designation']:
             extracted['designation'] = "CLERK"
 
-        # 4. Extract Name cleanly
         name_match = re.search(r'(?:EMPLOYEE\s*NAME|NAME)\s*[:\-]?\s*([A-Z\s\.]+)', text_upper)
         if name_match:
             raw_name = name_match.group(1)
@@ -59,11 +57,9 @@ def parse_salary_slip(file):
                     raw_name = raw_name.split(keyword)[0]
             extracted['name'] = raw_name.strip().upper()
             extracted['confidence'] += 20
-
         if not extracted['name']:
             extracted['name'] = "DUMMY NAME"
 
-        # 5. Multi-Block Scanning for Slips
         salary_blocks = re.split(r'GOVT\.\s*OF\s*JHARKHAND', text_upper)
         valid_cpc_basics = []
         monthly_records = []
@@ -72,10 +68,10 @@ def parse_salary_slip(file):
             if len(block) < 15:
                 continue
             
-            # Extract Month / Period from the block
-            month_match = re.search(r'SALARY\s*[\-\s]*([A-Z0-9\-\s]+(?:202[4-6]))', block)
+            # Dynamic year detection: 20\d{2}
+            month_match = re.search(r'SALARY\s*[\-\s]*([A-Z0-9\-\s]+(?:20\d{2}))', block)
             if not month_match:
-                month_match = re.search(r'(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z0-9\-\s]*202[4-6]', block)
+                month_match = re.search(r'(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z0-9\-\s]*20\d{2}', block)
             
             if month_match:
                 month_name = month_match.group(0).replace('SALARY', '').strip()
@@ -96,12 +92,15 @@ def parse_salary_slip(file):
             d_val = get_b_val([r"DA", r"महंगाई\s*भट्टा"])
             h_val = get_b_val([r"HRA", r"मकान\s*किराया"])
             m_val = get_b_val([r"MEDICAL\s*ALLOW", r"MED", r"चिकित्सा"])
+            ta_val = get_b_val([r"TA", r"TRANSPORT", r"परिवहन"])
+            o_val = get_b_val([r"OTHERS", r"अन्य"])
+            
             g_val = get_b_val([r"GPF", r"C\.?P\.?F\.?"])
             t_val = get_b_val([r"LTAX", r"PTAX", r"PROFESSIONAL\s*TAX", r"I\.?TAX", r"TDS", r"आयकर"])
             gl_val = get_b_val([r"GLI", r"GIS", r"बीमा"])
 
             if b_val > 0:
-                c_gross = b_val + d_val + h_val + m_val
+                c_gross = b_val + d_val + h_val + m_val + ta_val + o_val
                 c_ded = g_val + t_val + gl_val
                 
                 record = {
@@ -110,12 +109,15 @@ def parse_salary_slip(file):
                     'da': d_val,
                     'hra': h_val,
                     'medical': m_val,
+                    'ta': ta_val,
+                    'others': o_val,
                     'gross': c_gross,
                     'gpf': g_val,
                     'ptax': t_val if t_val < 500 else 0.0,
                     'tds': t_val if t_val >= 500 else 0.0,
                     'gli': gl_val,
-                    'net': c_gross - c_ded
+                    'net': c_gross - c_ded,
+                    'source_type': 'ACTUAL'  # MANDATORY TAG
                 }
                 monthly_records.append(record)
 
@@ -135,9 +137,10 @@ def parse_salary_slip(file):
             extracted['da'] = latest_record['da']
             extracted['hra'] = latest_record['hra']
             extracted['medical'] = latest_record['medical']
+            extracted['ta'] = latest_record['ta']
+            extracted['others'] = latest_record['others']
             extracted['gross'] = sum(r['gross'] for r in monthly_records)
             
-            # Yahan sum hata kar latest_record ka exact single month deduction set kar diya gaya hai
             extracted['gpf'] = latest_record['gpf']
             extracted['ptax'] = latest_record['ptax']
             extracted['tds'] = latest_record['tds']
@@ -150,4 +153,3 @@ def parse_salary_slip(file):
         print(f"Error in strict salary parser: {e}")
 
     return extracted
-
