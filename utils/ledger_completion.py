@@ -20,10 +20,12 @@ def get_next_increment(current_basic):
 
 def get_month_index(month_str):
     order = ['mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb']
-    m = str(month_str).lower()[:3]
-    if m in order:
-        return order.index(m)
+    m_str = str(month_str).lower()
+    for i, m in enumerate(order):
+        if m in m_str:
+            return i
     return -1
+
 
 def complete_ledger(parsed_entries, base_user_data, active_fy):
     ledger = {}
