@@ -585,27 +585,26 @@ def show_review():
                     with get_db_connection() as conn:
                         sys_fy = conn.cursor().execute("SELECT active_fy FROM app_settings WHERE id=1").fetchone()[0]
                     
-                    # 2. Run the Ledger Completion Engine
-                    completed_entries = complete_ledger(data.get('monthly_entries', []), base_user_data, sys_fy)
-                    base_user_data['monthly_entries'] = completed_entries
+                    raw_entries = data.get('monthly_entries', [])
                     
-                    # 3. Recalculate Final Gross exactly matching the new ledger
-                    if completed_entries:
-                        final_gross = sum(entry.get('gross', 0) for entry in completed_entries)
+                    # SMART FALLBACK: Agar parser ne mahine extract kiye hain, tabhi auto-engine chalega
+                    if len(raw_entries) > 0:
+                        completed_entries = complete_ledger(raw_entries, base_user_data, sys_fy)
+                        base_user_data['monthly_entries'] = completed_entries
+                        base_user_data['gross'] = sum(entry.get('gross', 0) for entry in completed_entries)
                     else:
-                        # Fallback agar PDF theek se parse nahi hui
-                        final_gross = float(basic) + float(da) + float(hra) + float(medical)
-                        
-                    base_user_data['gross'] = final_gross
-
+                        # Agar mahino ki list khali hai, toh aapke MANUAL UI Inputs ko zinda rakhega
+                        base_user_data['monthly_entries'] = []
+                        base_user_data['gross'] = float(basic) + float(da) + float(hra) + float(medical)
                     
-                    # 4. Run Tax Calculation
+                    # 2. Run Tax Calculation
                     tax_computations = calculate_tax(base_user_data, sys_fy)
                     st.session_state.user_data = {**base_user_data, **tax_computations}
+                    
                 except Exception as tax_err:
-             
                     st.error(f"Tax Calculation Error: {tax_err}")
                     st.session_state.user_data = base_user_data
+
 
                 try:
                     with get_db_connection() as conn:
