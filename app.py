@@ -578,11 +578,24 @@ def show_review():
                     'medical': medical, 'gpf': gpf, 'tds': tds, 'assessment_year': assessment_year,
                     'tax_regime': tax_regime, 'monthly_entries': data.get('monthly_entries', [])
                 }
-                
                 try:
-                    tax_computations = calculate_tax(base_user_data)
+                    # 1. Fetch active FY
+                    with get_db_connection() as conn:
+                        sys_fy = conn.cursor().execute("SELECT active_fy FROM app_settings WHERE id=1").fetchone()[0]
+                    
+                    # 2. Run the Ledger Completion Engine
+                    completed_entries = complete_ledger(data.get('monthly_entries', []), base_user_data, sys_fy)
+                    base_user_data['monthly_entries'] = completed_entries
+                    
+                    # 3. Recalculate Final Gross exactly matching the new ledger
+                    final_gross = sum(entry.get('gross', 0) for entry in completed_entries)
+                    base_user_data['gross'] = final_gross
+                    
+                    # 4. Run Tax Calculation
+                    tax_computations = calculate_tax(base_user_data, sys_fy)
                     st.session_state.user_data = {**base_user_data, **tax_computations}
                 except Exception as tax_err:
+             
                     st.error(f"Tax Calculation Error: {tax_err}")
                     st.session_state.user_data = base_user_data
 
