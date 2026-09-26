@@ -309,11 +309,12 @@ def show_admin_dashboard():
         except Exception as e:
             st.error(f"Error fetching logs: {e}")
 
-    with tab2:
+      with tab2:
         st.subheader("System Configurations")
         try:
             with get_db_connection() as conn:
-                current_settings = conn.cursor().execute("SELECT upi_id, payee_name, amount, sender_email, sender_password, telegram_token, telegram_chat_id FROM app_settings WHERE id=1").fetchone()
+                # ADDED active_fy IN SELECT
+                current_settings = conn.cursor().execute("SELECT upi_id, payee_name, amount, sender_email, sender_password, telegram_token, telegram_chat_id, active_fy FROM app_settings WHERE id=1").fetchone()
             
             with st.form("settings_form"):
                 st.markdown("**💰 Payment QR Settings**")
@@ -329,15 +330,24 @@ def show_admin_dashboard():
                 new_bot_token = st.text_input("Telegram Bot Token", value=current_settings[5] if len(current_settings)>5 else "")
                 new_chat_id = st.text_input("Telegram Chat ID", value=current_settings[6] if len(current_settings)>6 else "")
                 
+                # NEW ADDITION: FY SELECTOR
+                st.markdown("**📅 System Financial Year**")
+                current_fy = current_settings[7] if len(current_settings)>7 and current_settings[7] else "2025-2026"
+                fy_options = ["2024-2025", "2025-2026", "2026-2027"]
+                active_fy = st.selectbox("Active Financial Year", fy_options, index=fy_options.index(current_fy) if current_fy in fy_options else 1)
+
                 if st.form_submit_button("Update All Settings", type="primary"):
                     with get_db_connection() as conn:
-                        conn.cursor().execute("UPDATE app_settings SET upi_id=?, payee_name=?, amount=?, sender_email=?, sender_password=?, telegram_token=?, telegram_chat_id=? WHERE id=1", 
-                                              (new_upi, new_name, new_amount, new_email, new_pass, new_bot_token, new_chat_id))
+                        # ADDED active_fy IN UPDATE
+                        conn.cursor().execute("UPDATE app_settings SET upi_id=?, payee_name=?, amount=?, sender_email=?, sender_password=?, telegram_token=?, telegram_chat_id=?, active_fy=? WHERE id=1", 
+                                              (new_upi, new_name, new_amount, new_email, new_pass, new_bot_token, new_chat_id, active_fy))
                         conn.commit()
                     st.success("System configurations updated successfully!")
                     st.rerun()
         except Exception as e:
-            st.error("Error loading settings")
+            st.error(f"Error loading settings: {e}")
+
+            
 
     with tab3:
         st.subheader("Detailed Financial Ledger")
