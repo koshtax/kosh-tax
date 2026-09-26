@@ -1,56 +1,60 @@
-def calculate_tax(user_data):
+def calculate_tax(user_data, active_fy="2025-2026"):
     income = float(user_data.get('gross', 0))
-    regime = user_data.get('tax_regime', 'NEW REGIME')
-
-    if regime == "NEW REGIME":
-        std_deduction = 75000
-# ... baki ka code same rahega ...
-
-        taxable = max(0, income - std_deduction)
-
-        if taxable <= 400000:
-            tax = 0
-        elif taxable <= 800000:
-            tax = (taxable - 400000) * 0.05
-        elif taxable <= 1200000:
-            tax = 20000 + (taxable - 800000) * 0.10
+    std_deduction = 75000  # FY 2025-26 ke liye fixed
+    taxable = max(0, income - std_deduction)
+    rounded_taxable = round(taxable / 10) * 10
+    
+    tax = 0.0
+    slabs = { 'tax_slab_5': 0, 'tax_slab_10': 0, 'tax_slab_15': 0, 'tax_slab_20': 0, 'tax_slab_25': 0, 'tax_slab_30': 0 }
+    
+    inc = rounded_taxable
+    if inc > 400000:
+        if inc <= 800000:
+            slabs['tax_slab_5'] = (inc - 400000) * 0.05
+        elif inc <= 1200000:
+            slabs['tax_slab_5'] = 20000
+            slabs['tax_slab_10'] = (inc - 800000) * 0.10
+        elif inc <= 1600000:
+            slabs['tax_slab_5'] = 20000
+            slabs['tax_slab_10'] = 40000
+            slabs['tax_slab_15'] = (inc - 1200000) * 0.15
+        elif inc <= 2000000:
+            slabs['tax_slab_5'] = 20000
+            slabs['tax_slab_10'] = 40000
+            slabs['tax_slab_15'] = 60000
+            slabs['tax_slab_20'] = (inc - 1600000) * 0.20
+        elif inc <= 2400000:
+            slabs['tax_slab_5'] = 20000
+            slabs['tax_slab_10'] = 40000
+            slabs['tax_slab_15'] = 60000
+            slabs['tax_slab_20'] = 80000
+            slabs['tax_slab_25'] = (inc - 2000000) * 0.25
         else:
-            tax = 60000 + (taxable - 1200000) * 0.15
+            slabs['tax_slab_5'] = 20000
+            slabs['tax_slab_10'] = 40000
+            slabs['tax_slab_15'] = 60000
+            slabs['tax_slab_20'] = 80000
+            slabs['tax_slab_25'] = 100000
+            slabs['tax_slab_30'] = (inc - 2400000) * 0.30
 
-        # Rebate 87A
-        if taxable <= 1200000:
-            tax = max(0, tax - 60000)
+    tax = sum(slabs.values())
+    
+    rebate = 0.0
+    if rounded_taxable <= 1200000:
+        rebate = min(tax, 60000)
+        tax = max(0, tax - rebate)
 
-        # Cess 4%
-        cess = tax * 0.04
-        total_tax = tax + cess
+    cess = tax * 0.04
+    total_tax = tax + cess
 
-        return {
-            'taxable_income': taxable,
-            'tax': tax,
-            'cess': cess,
-            'total_tax': total_tax
-        }
-    else:
-        # Old regime calculation
-        std_deduction = 50000
-        taxable = max(0, income - std_deduction)
-
-        if taxable <= 250000:
-            tax = 0
-        elif taxable <= 500000:
-            tax = (taxable - 250000) * 0.05
-        elif taxable <= 1000000:
-            tax = 12500 + (taxable - 500000) * 0.20
-        else:
-            tax = 112500 + (taxable - 1000000) * 0.30
-
-        cess = tax * 0.04
-        total_tax = tax + cess
-
-        return {
-            'taxable_income': taxable,
-            'tax': tax,
-            'cess': cess,
-            'total_tax': total_tax
-        }
+    return {
+        'taxable_income': rounded_taxable,
+        'tax_on_total_income': tax + rebate,
+        'rebate_87a': rebate,
+        'tax_after_rebate': tax,
+        'cess': cess,
+        'total_tax': total_tax,
+        'tax_regime': 'new',
+        'standard_deduction': std_deduction,
+        **slabs
+    }
