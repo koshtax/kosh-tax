@@ -65,6 +65,9 @@ def init_db():
                 c.execute("INSERT INTO app_settings (id, upi_id, payee_name, amount, sender_email, sender_password) VALUES (1, 'admin@upi', 'Kosh-Tax Admin', 150.0, '', '')")
             
             # Migration for old data (Alag-alag try-except zaroori h SQLite k liye)
+            # init_db() ke existing try-except block mein ye migration line add karein:
+            try: c.execute("ALTER TABLE app_settings ADD COLUMN active_fy TEXT DEFAULT '2025-2026'")
+            except: pass
             try: c.execute("ALTER TABLE transaction_logs ADD COLUMN amount REAL DEFAULT 0.0")
             except: pass
             try: c.execute("ALTER TABLE transaction_logs ADD COLUMN email TEXT DEFAULT ''")
