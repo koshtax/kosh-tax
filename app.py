@@ -10,7 +10,7 @@ from utils.salary_parser import parse_salary_slip
 from utils.pdf_generator import generate_form16_pdf
 from utils.tax_calculator import calculate_tax
 from utils.trial_watermark import is_trial_mode
-
+from utils.ledger_completion import complete_ledger
 # ================= PAGE CONFIGURATION =================
 st.set_page_config(
     page_title="Kosh-Tax | Form 16 & TDS Manager",
