@@ -309,7 +309,7 @@ def show_admin_dashboard():
         except Exception as e:
             st.error(f"Error fetching logs: {e}")
 
-      with tab2:
+    with tab2:
         st.subheader("System Configurations")
         try:
             with get_db_connection() as conn:
