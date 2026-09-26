@@ -590,8 +590,14 @@ def show_review():
                     base_user_data['monthly_entries'] = completed_entries
                     
                     # 3. Recalculate Final Gross exactly matching the new ledger
-                    final_gross = sum(entry.get('gross', 0) for entry in completed_entries)
+                    if completed_entries:
+                        final_gross = sum(entry.get('gross', 0) for entry in completed_entries)
+                    else:
+                        # Fallback agar PDF theek se parse nahi hui
+                        final_gross = float(basic) + float(da) + float(hra) + float(medical)
+                        
                     base_user_data['gross'] = final_gross
+
                     
                     # 4. Run Tax Calculation
                     tax_computations = calculate_tax(base_user_data, sys_fy)
