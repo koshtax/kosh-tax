@@ -577,7 +577,7 @@ def show_review():
                     'basic': basic, 'da': da, 'hra': hra,
                     'medical': medical, 'gpf': gpf, 'tds': tds, 'assessment_year': assessment_year,
                     'tax_regime': tax_regime, 'monthly_entries': data.get('monthly_entries', [])
-                }
+                }         
                 try:
                     # 1. Fetch active FY
                     with get_db_connection() as conn:
