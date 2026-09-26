@@ -588,15 +588,18 @@ def show_review():
                     raw_entries = data.get('monthly_entries', [])
                     
                     # SMART FALLBACK: Agar parser ne mahine extract kiye hain, tabhi auto-engine chalega
-                    if len(raw_entries) > 0:
+                    if len(raw_entries) >= 5:
                         completed_entries = complete_ledger(raw_entries, base_user_data, sys_fy)
                         base_user_data['monthly_entries'] = completed_entries
                         base_user_data['gross'] = sum(entry.get('gross', 0) for entry in completed_entries)
+                        base_user_data['financial_year'] = sys_fy
+                        base_user_data['pdf_config'] = {'strict_period_validation': False}
                     else:
                         # Agar mahino ki list khali hai, toh aapke MANUAL UI Inputs ko zinda rakhega
                         base_user_data['monthly_entries'] = []
                         base_user_data['gross'] = float(basic) + float(da) + float(hra) + float(medical)
-                    
+                        base_user_data['financial_year'] = sys_fy
+                        base_user_data['pdf_config'] = {'strict_period_validation': False}
                     # 2. Run Tax Calculation
                     tax_computations = calculate_tax(base_user_data, sys_fy)
                     st.session_state.user_data = {**base_user_data, **tax_computations}
