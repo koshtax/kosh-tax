@@ -576,7 +576,9 @@ def show_review():
                     'ddo_father': ddo_father.upper(), 'ddo_capacity': ddo_capacity.upper(),
                     'basic': basic, 'da': da, 'hra': hra,
                     'medical': medical, 'gpf': gpf, 'tds': tds, 'assessment_year': assessment_year,
-                    'tax_regime': tax_regime, 'monthly_entries': data.get('monthly_entries', [])
+                    'tax_regime': tax_regime, 'monthly_entries': data.get('monthly_entries', []),
+                    'financial_year': sys_fy,
+                    'pdf_config': {'strict_period_validation': False}
                 }         
                 try:
                     # 1. Fetch active FY
