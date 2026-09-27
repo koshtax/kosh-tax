@@ -308,8 +308,7 @@ def show_admin_dashboard():
                     st.success("🎉 No pending UTRs! You are all caught up.")
         except Exception as e:
             st.error(f"Error fetching logs: {e}")
-
-      with tab2:
+    with tab2:
         st.subheader("System Configurations")
         try:
             with get_db_connection() as conn:
