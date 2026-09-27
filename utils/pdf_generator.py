@@ -81,8 +81,9 @@ def _num(value: Any, default: float = 0.0) -> float:
         return default
     try:
         return float(value)
-    except (TypeError, ValueError):
-        raise ValueError(f"Invalid numeric value: {value!r}")
+    except Exception:
+        return default
+
 
 
 def _money(value: Any) -> float:
