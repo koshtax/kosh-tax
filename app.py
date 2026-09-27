@@ -546,6 +546,16 @@ def show_review():
                 for err in errors:
                     st.error(f"❌ {err}")
             else:
+                # 1. PARSER CHECK: Agar parser ne kam mahine extract kiye, toh usko khali kar do taaki
+                # purana "March to February" wala single row system chal sake.
+                raw_entries = data.get('monthly_entries', [])
+                if len(raw_entries) < 5:
+                    raw_entries = []
+                
+                # 2. GROSS INJECTION: Gross ko manually jod kar dictionary mein daalna zaroori hai
+                # warna tax_calculator_2 ko zero milega.
+                manual_gross = float(basic) + float(da) + float(hra) + float(medical)
+                
                 base_user_data = {
                     'pan': pan_cleaned, 'name': name.upper(), 'designation': designation.upper(),
                     'mobile': mobile.strip(), 'email': email_cleaned, 'office_name': office_name.upper(),
@@ -555,7 +565,10 @@ def show_review():
                     'ddo_father': ddo_father.upper(), 'ddo_capacity': ddo_capacity.upper(),
                     'basic': basic, 'da': da, 'hra': hra,
                     'medical': medical, 'gpf': gpf, 'tds': tds, 'assessment_year': assessment_year,
-                    'tax_regime': tax_regime, 'monthly_entries': data.get('monthly_entries', [])
+                    'tax_regime': tax_regime, 
+                    'monthly_entries': raw_entries,
+                    'gross': manual_gross,  # BUG FIX: Yeh miss ho gaya tha
+                    'pdf_config': {'strict_period_validation': False}
                 }
                 
                 try:
