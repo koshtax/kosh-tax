@@ -545,16 +545,18 @@ def show_review():
             if errors:
                 for err in errors:
                     st.error(f"❌ {err}")
+
             else:
-                # 1. PARSER CHECK: Agar parser ne kam mahine extract kiye, toh usko khali kar do taaki
-                # purana "March to February" wala single row system chal sake.
+                # 1. PARSER CHECK: Purana "March to February" fallback
                 raw_entries = data.get('monthly_entries', [])
                 if len(raw_entries) < 5:
                     raw_entries = []
                 
-                # 2. GROSS INJECTION: Gross ko manually jod kar dictionary mein daalna zaroori hai
-                # warna tax_calculator_2 ko zero milega.
+                # 2. GROSS INJECTION & FY FIX
                 manual_gross = float(basic) + float(da) + float(hra) + float(medical)
+                
+                # FY EXTRATOR: Form dropdown se FY nikal kar PDF generator ko dena zaroori hai
+                fy_string = "2025-26" if "2025-26" in assessment_year else "2024-25"
                 
                 base_user_data = {
                     'pan': pan_cleaned, 'name': name.upper(), 'designation': designation.upper(),
@@ -567,7 +569,8 @@ def show_review():
                     'medical': medical, 'gpf': gpf, 'tds': tds, 'assessment_year': assessment_year,
                     'tax_regime': tax_regime, 
                     'monthly_entries': raw_entries,
-                    'gross': manual_gross,  # BUG FIX: Yeh miss ho gaya tha
+                    'gross': manual_gross,
+                    'financial_year': fy_string, # VALUE ERROR FIX: Generator ko explicitly FY mil jayega
                     'pdf_config': {'strict_period_validation': False}
                 }
                 
@@ -577,6 +580,7 @@ def show_review():
                 except Exception as tax_err:
                     st.error(f"Tax Calculation Error: {tax_err}")
                     st.session_state.user_data = base_user_data
+
 
                 try:
                     with get_db_connection() as conn:
