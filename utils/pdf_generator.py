@@ -77,12 +77,20 @@ DEVANAGARI_BOLD_FONT = BUNDLED_FONT_DIR / "NotoSansDevanagari-Bold.ttf"
 
 def _num(value: Any, default: float = 0.0) -> float:
     """Safe numeric conversion without silently converting malformed values."""
+    # 1. Sabse pehle Jinja ke missing/Undefined variables ko block karo
+    if type(value).__name__ in ['Undefined', 'StrictUndefined']:
+        return default
+        
+    # 2. Khali ya None values ko default (0.0) kar do
     if value is None or value == "":
         return default
+        
+    # 3. Safe conversion
     try:
         return float(value)
     except Exception:
         return default
+
 
 
 
